@@ -2307,6 +2307,16 @@ export default function App() {
     return () => clearInterval(id);
   }, []);
 
+  // ── Responsive viewport tracking ────────────────────────────────────────
+  const [vw, setVw] = useState(() => (typeof window !== "undefined" ? window.innerWidth : 1024));
+  useEffect(() => {
+    const onResize = () => setVw(window.innerWidth);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  const isMobile = vw < 640;
+  const isNarrow = vw < 420;
+
   // ── Tour keyboard navigation ─────────────────────────────────────────────
   useEffect(() => {
     if (!showTour) return;
@@ -2886,10 +2896,10 @@ export default function App() {
       )}
 
       {/* Header */}
-      <div style={{ background: "linear-gradient(135deg,#09111f,#0d1e3a,#081428)", borderBottom: "2px solid #1a3260", padding: "24px 20px 18px", textAlign: "center", position: "relative" }}>
+      <div style={{ background: "linear-gradient(135deg,#09111f,#0d1e3a,#081428)", borderBottom: "2px solid #1a3260", padding: isMobile ? "50px 10px 14px" : "24px 20px 18px", textAlign: "center", position: "relative" }}>
 
         {/* Account button — top left */}
-        <div style={{ position: "absolute", top: 16, left: 18, zIndex: 20 }}>
+        <div style={{ position: "absolute", top: isMobile ? 10 : 16, left: isMobile ? 10 : 18, zIndex: 20 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             {/* Tour button */}
             <button
@@ -3240,7 +3250,7 @@ export default function App() {
         })()}
 
         {/* Search icon + input — top right */}
-        <div style={{ position: "absolute", top: 16, right: 18, zIndex: 20 }} ref={searchRef}>
+        <div style={{ position: "absolute", top: isMobile ? 10 : 16, right: isMobile ? 10 : 18, zIndex: 20 }} ref={searchRef}>
           <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
             {searchOpen && (
               <div style={{ position: "relative" }}>
@@ -3249,11 +3259,12 @@ export default function App() {
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   onKeyDown={e => { if (e.key === "Escape") { setSearchOpen(false); setSearchQuery(""); } }}
-                  placeholder="Search athlete or school…"
+                  placeholder="Search…"
                   style={{
-                    width: 220, padding: "7px 12px 7px 34px", borderRadius: "20px 0 0 20px",
+                    width: isMobile ? Math.min(150, vw - 90) : 220, padding: "7px 12px 7px 34px", borderRadius: "20px 0 0 20px",
                     border: "1px solid #1a3260", borderRight: "none",
                     background: "#0d1e3a", color: "#e8eef8", fontSize: 13, outline: "none",
+                    boxSizing: "border-box",
                   }}
                 />
                 <span style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", fontSize: 14, color: "#8899bb", pointerEvents: "none" }}>🔍</span>
@@ -3261,10 +3272,11 @@ export default function App() {
                 {/* Results dropdown */}
                 {searchResults.length > 0 && (
                   <div style={{
-                    position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0,
+                    position: "absolute", top: "calc(100% + 6px)", left: 0, right: isMobile ? "auto" : 0,
                     background: "#0d1e3a", border: "1px solid #1a3260", borderRadius: 10,
                     boxShadow: "0 8px 32px rgba(0,0,0,0.6)", overflow: "hidden", zIndex: 100,
-                    minWidth: 260,
+                    width: isMobile ? Math.min(260, vw - 24) : "auto",
+                    minWidth: isMobile ? 0 : 260,
                   }}>
                     {searchResults.map((r, i) => (
                       <div key={i} onClick={() => handleSearchSelect(r)} style={{
@@ -3292,9 +3304,10 @@ export default function App() {
 
                 {searchQuery.length >= 2 && searchResults.length === 0 && (
                   <div style={{
-                    position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0,
+                    position: "absolute", top: "calc(100% + 6px)", left: 0, right: isMobile ? "auto" : 0,
                     background: "#0d1e3a", border: "1px solid #1a3260", borderRadius: 10,
                     padding: "12px 14px", fontSize: 12, color: "#555", zIndex: 100,
+                    width: isMobile ? Math.min(260, vw - 24) : "auto",
                   }}>
                     No athletes or schools found
                   </div>
@@ -3315,20 +3328,29 @@ export default function App() {
             </button>
           </div>
         </div>
-        <div style={{ fontSize: 11, letterSpacing: "0.2em", color: "#8899bb", textTransform: "uppercase", marginBottom: 5 }}>Arlington Soccer Association</div>
-        <h1 style={{ margin: 0, fontSize: "clamp(18px,4vw,34px)", fontWeight: 800, letterSpacing: "-0.01em" }}>
+        <div style={{ fontSize: isMobile ? 9 : 11, letterSpacing: "0.2em", color: "#8899bb", textTransform: "uppercase", marginBottom: 5 }}>Arlington Soccer Association</div>
+        <h1 style={{ margin: 0, fontSize: "clamp(18px,5.5vw,34px)", fontWeight: 800, letterSpacing: "-0.01em" }}>
           <span style={{ color: "#C8102E" }}>Alumni College Match Tracker</span>
         </h1>
-        <p style={{ color: "#8899bb", marginTop: 6, fontSize: 12 }}>
+        <p style={{ color: "#8899bb", marginTop: 6, fontSize: isMobile ? 11 : 12, padding: isMobile ? "0 6px" : 0 }}>
           {totalAthletes} athletes · {new Set(activePlayers.map(p => p.college)).size} programs · Classes of {yearsLabel} · 3 NCAA divisions
         </p>
-        <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 14 }}>
-          {[{ id: "schools", label: "🎓 Schools & Schedules" }, { id: "athletes", label: "⚽ Athletes" }, { id: "matchups", label: "⚡ Arlington vs Arlington" }, { id: "calendar", label: "📅 Calendar" }].map(tab => (
+        <div style={{
+          display: isMobile ? "grid" : "flex", gridTemplateColumns: isMobile ? "1fr 1fr" : undefined,
+          justifyContent: "center", gap: isMobile ? 7 : 8, marginTop: 14,
+        }}>
+          {[
+            { id: "schools", icon: "🎓", label: "Schools & Schedules", short: "Schools" },
+            { id: "athletes", icon: "⚽", label: "Athletes", short: "Athletes" },
+            { id: "matchups", icon: "⚡", label: "Arlington vs Arlington", short: "Rivalries" },
+            { id: "calendar", icon: "📅", label: "Calendar", short: "Calendar" },
+          ].map(tab => (
             <button key={tab.id} onClick={() => { setActiveTab(tab.id); setSelectedCollege(null); setCalSelectedDay(null); }} style={{
-              padding: "7px 18px", borderRadius: 20, border: activeTab === tab.id ? "none" : "1px solid #333",
+              padding: isMobile ? "9px 8px" : "7px 18px", borderRadius: isMobile ? 12 : 20, border: activeTab === tab.id ? "none" : "1px solid #333",
               background: activeTab === tab.id ? (tab.id === "matchups" ? "linear-gradient(90deg,#f7c948,#ff6b35)" : tab.id === "athletes" ? "#C8102E" : tab.id === "calendar" ? "#1a6b4a" : "#2a7dd4") : "transparent",
-              color: activeTab === tab.id ? "#fff" : "#888", cursor: "pointer", fontWeight: activeTab === tab.id ? 700 : 400, fontSize: 13,
-            }}>{tab.label}</button>
+              color: activeTab === tab.id ? "#fff" : "#888", cursor: "pointer", fontWeight: activeTab === tab.id ? 700 : 400,
+              fontSize: isMobile ? 12 : 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+            }}>{tab.icon} {isMobile ? tab.short : tab.label}</button>
           ))}
         </div>
 
@@ -3344,7 +3366,7 @@ export default function App() {
             const active = selectedYears.has(year);
             return (
               <button key={year} onClick={() => toggleYear(year)} style={{
-                padding: "5px 13px", borderRadius: 20, fontSize: 11, cursor: "pointer",
+                padding: isMobile ? "5px 9px" : "5px 13px", borderRadius: 20, fontSize: isMobile ? 10 : 11, cursor: "pointer",
                 border: `1px solid ${active ? border : "#333"}`,
                 background: active ? bg : "transparent",
                 color: active ? color : "#555",
@@ -3375,7 +3397,7 @@ export default function App() {
           <div style={{ background: `linear-gradient(180deg,${urgencyBg},transparent)`, borderBottom: `1px solid ${urgency}30`, borderTop: `1px solid ${urgency}20` }}>
 
             {/* Header row */}
-            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 20px 8px", borderBottom: `1px solid ${urgency}18` }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: isMobile ? "10px 12px 8px" : "10px 20px 8px", borderBottom: `1px solid ${urgency}18`, flexWrap: "wrap" }}>
               <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.18em", textTransform: "uppercase", color: urgency, background: `${urgency}20`, border: `1px solid ${urgency}50`, borderRadius: 4, padding: "3px 9px", whiteSpace: "nowrap", flexShrink: 0 }}>
                 📅 Next Matchday · {dayLabel}
               </div>
@@ -3460,7 +3482,7 @@ export default function App() {
         </div>
       )}
 
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "20px 14px" }}>
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: isMobile ? "16px 8px" : "20px 14px" }}>
 
         {/* ── MATCHUPS TAB ── */}
         {/* ══════════════════════════════════════════════════════
@@ -3587,24 +3609,24 @@ export default function App() {
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, padding: "0 4px" }}>
                 <button onClick={() => { const prev = monthKeys[curIdx - 1]; if (prev) { setCalMonthKey(prev); setSelectedDay(null); } }}
                   disabled={curIdx <= 0}
-                  style={{ background: curIdx > 0 ? "#112040" : "transparent", border: "1px solid #1a3260", borderRadius: 8, color: curIdx > 0 ? "#e8eef8" : "#2a3a5a", padding: "6px 14px", cursor: curIdx > 0 ? "pointer" : "default", fontSize: 14 }}>
-                  ← Prev
+                  style={{ background: curIdx > 0 ? "#112040" : "transparent", border: "1px solid #1a3260", borderRadius: 8, color: curIdx > 0 ? "#e8eef8" : "#2a3a5a", padding: isMobile ? "6px 10px" : "6px 14px", cursor: curIdx > 0 ? "pointer" : "default", fontSize: 14 }}>
+                  {isMobile ? "←" : "← Prev"}
                 </button>
                 <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: "#e8eef8" }}>{MONTH_NAMES[cur.month]} {cur.year}</div>
-                  <div style={{ fontSize: 11, color: "#555", marginTop: 2 }}>
+                  <div style={{ fontSize: isMobile ? 15 : 18, fontWeight: 800, color: "#e8eef8" }}>{MONTH_NAMES[cur.month]} {cur.year}</div>
+                  <div style={{ fontSize: isMobile ? 10 : 11, color: "#555", marginTop: 2 }}>
                     {(cur.events || []).filter(e => !e.past).length} upcoming · {(cur.events || []).filter(e => e.past).length} played
                   </div>
                 </div>
                 <button onClick={() => { const next = monthKeys[curIdx + 1]; if (next) { setCalMonthKey(next); setSelectedDay(null); } }}
                   disabled={curIdx >= monthKeys.length - 1}
-                  style={{ background: curIdx < monthKeys.length - 1 ? "#112040" : "transparent", border: "1px solid #1a3260", borderRadius: 8, color: curIdx < monthKeys.length - 1 ? "#e8eef8" : "#2a3a5a", padding: "6px 14px", cursor: curIdx < monthKeys.length - 1 ? "pointer" : "default", fontSize: 14 }}>
-                  Next →
+                  style={{ background: curIdx < monthKeys.length - 1 ? "#112040" : "transparent", border: "1px solid #1a3260", borderRadius: 8, color: curIdx < monthKeys.length - 1 ? "#e8eef8" : "#2a3a5a", padding: isMobile ? "6px 10px" : "6px 14px", cursor: curIdx < monthKeys.length - 1 ? "pointer" : "default", fontSize: 14 }}>
+                  {isMobile ? "→" : "Next →"}
                 </button>
               </div>
 
               {/* Quick month jump */}
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16, justifyContent: "center" }}>
+              <div style={{ display: "flex", gap: isMobile ? 5 : 6, flexWrap: "wrap", marginBottom: 16, justifyContent: "center" }}>
                 {[{abbr:"Aug",num:7},{abbr:"Sep",num:8},{abbr:"Oct",num:9},{abbr:"Nov",num:10}].map(({abbr, num}) => {
                   const fullNames = { Aug: "August", Sep: "September", Oct: "October", Nov: "November" };
                   const mk = `2026-${num}`;
@@ -3613,13 +3635,13 @@ export default function App() {
                   const isCur = mk === calMonth;
                   return (
                     <button key={mk} onClick={() => { setCalMonthKey(mk); setSelectedDay(null); }} style={{
-                      padding: "5px 16px", borderRadius: 20, fontSize: 12, cursor: "pointer",
+                      padding: isMobile ? "5px 11px" : "5px 16px", borderRadius: 20, fontSize: isMobile ? 11 : 12, cursor: "pointer",
                       background: isCur ? "#1a6b4a" : "#0d1e3a",
                       border: `1px solid ${isCur ? "#2aaa77" : "#1a3260"}`,
                       color: isCur ? "#fff" : "#8899bb",
                       fontWeight: isCur ? 700 : 400,
                     }}>
-                      {fullNames[abbr]}
+                      {isMobile ? abbr : fullNames[abbr]}
                       <span style={{ marginLeft: 5, opacity: 0.65, fontSize: 10 }}>({m.events.filter(e => !e.past).length})</span>
                     </button>
                   );
@@ -3627,16 +3649,16 @@ export default function App() {
               </div>
 
               {/* Day headers */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2, marginBottom: 2 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: isMobile ? 1 : 2, marginBottom: 2 }}>
                 {DAY_NAMES.map(d => (
-                  <div key={d} style={{ textAlign: "center", fontSize: 10, fontWeight: 700, color: "#444", padding: "4px 0", letterSpacing: "0.05em" }}>{d}</div>
+                  <div key={d} style={{ textAlign: "center", fontSize: isMobile ? 9 : 10, fontWeight: 700, color: "#444", padding: "4px 0", letterSpacing: "0.05em" }}>{isMobile ? d[0] : d}</div>
                 ))}
               </div>
 
               {/* Calendar grid */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: isMobile ? 1 : 2 }}>
                 {cells.map((day, i) => {
-                  if (!day) return <div key={i} style={{ minHeight: 72, background: "#080f1e", borderRadius: 6, opacity: 0.3 }} />;
+                  if (!day) return <div key={i} style={{ minHeight: isMobile ? 40 : 72, background: "#080f1e", borderRadius: 6, opacity: 0.3 }} />;
                   const dayEvents = byDay[day] || [];
                   const upcoming = dayEvents.filter(e => !e.past);
                   const past = dayEvents.filter(e => e.past);
@@ -3647,44 +3669,64 @@ export default function App() {
                   return (
                     <div key={i} onClick={() => setSelectedDay(isSelected ? null : day)}
                       style={{
-                        minHeight: 72, background: isSelected ? "#0d2a1e" : isTod ? "#1a1a08" : "#0d1e3a",
-                        borderRadius: 6, padding: "4px 5px", cursor: dayEvents.length ? "pointer" : "default",
+                        minHeight: isMobile ? 40 : 72, background: isSelected ? "#0d2a1e" : isTod ? "#1a1a08" : "#0d1e3a",
+                        borderRadius: isMobile ? 5 : 6, padding: isMobile ? "3px 2px" : "4px 5px", cursor: dayEvents.length ? "pointer" : "default",
                         border: `1px solid ${isSelected ? "#2aaa77" : isTod ? "#4a4a10" : dayEvents.length ? "#1a3260" : "#0d1825"}`,
                         transition: "background 0.15s",
                         position: "relative",
                       }}
                     >
                       {/* Day number */}
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 3 }}>
-                        <span style={{ fontSize: 11, fontWeight: isTod ? 800 : 600, color: isTod ? "#e8c547" : dayEvents.length ? "#c0cce8" : "#2a3a5a" }}>{day}</span>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 2, marginBottom: isMobile ? 0 : 3 }}>
+                        <span style={{ fontSize: isMobile ? 10 : 11, fontWeight: isTod ? 800 : 600, color: isTod ? "#e8c547" : dayEvents.length ? "#c0cce8" : "#2a3a5a" }}>{day}</span>
                         {hasArlington && <span style={{ fontSize: 8, color: "#f7c948" }}>⚡</span>}
                       </div>
 
-                      {/* Game dots / mini chips */}
-                      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                        {dayEvents.slice(0, 3).map((ev, j) => {
-                          const evYears = [...new Set([...ev.players, ...ev.opponentPlayers].map(p => p.classYear))];
+                      {isMobile ? (
+                        /* Mobile: compact dot indicators — tap the day to see full details below */
+                        dayEvents.length > 0 && (
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 2, justifyContent: "center", marginTop: 2 }}>
+                            {dayEvents.slice(0, 4).map((ev, j) => {
+                              const evYears = [...new Set([...ev.players, ...ev.opponentPlayers].map(p => p.classYear))];
+                              const col = evYears.length === 1 ? classColor(evYears[0]) : "#e8c547";
+                              return <span key={j} style={{ width: 5, height: 5, borderRadius: "50%", background: col, opacity: ev.past ? 0.35 : 1, flexShrink: 0 }} />;
+                            })}
+                            {dayEvents.length > 4 && <span style={{ fontSize: 7, color: "#666", lineHeight: "5px" }}>+{dayEvents.length - 4}</span>}
+                          </div>
+                        )
+                      ) : (
+                        /* Game dots / mini chips */
+                        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                          {dayEvents.slice(0, 3).map((ev, j) => {
+                            const evYears = [...new Set([...ev.players, ...ev.opponentPlayers].map(p => p.classYear))];
           const col = evYears.length === 1 ? classColor(evYears[0]) : "#e8c547";
-                          const alpha = ev.past ? "55" : "cc";
-                          return (
-                            <div key={j} style={{
-                              fontSize: 8, lineHeight: 1.2, padding: "2px 4px", borderRadius: 3,
-                              background: `${col}22`, borderLeft: `2px solid ${col}${alpha}`,
-                              color: ev.past ? "#444" : "#aab8cc", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis",
-                            }}>
-                              {fmtTime(ev.game.time) !== "TBA" && <span style={{ color: `${col}${alpha}`, marginRight: 3, fontWeight: 700 }}>{fmtTime(ev.game.time)}</span>}
-                              {(ev.schoolA || ev.college).split(" ").slice(-1)[0]}
-                            </div>
-                          );
-                        })}
-                        {dayEvents.length > 3 && (
-                          <div style={{ fontSize: 8, color: "#444", textAlign: "center" }}>+{dayEvents.length - 3} more</div>
-                        )}
-                      </div>
+                            const alpha = ev.past ? "55" : "cc";
+                            return (
+                              <div key={j} style={{
+                                fontSize: 8, lineHeight: 1.2, padding: "2px 4px", borderRadius: 3,
+                                background: `${col}22`, borderLeft: `2px solid ${col}${alpha}`,
+                                color: ev.past ? "#444" : "#aab8cc", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis",
+                              }}>
+                                {fmtTime(ev.game.time) !== "TBA" && <span style={{ color: `${col}${alpha}`, marginRight: 3, fontWeight: 700 }}>{fmtTime(ev.game.time)}</span>}
+                                {(ev.schoolA || ev.college).split(" ").slice(-1)[0]}
+                              </div>
+                            );
+                          })}
+                          {dayEvents.length > 3 && (
+                            <div style={{ fontSize: 8, color: "#444", textAlign: "center" }}>+{dayEvents.length - 3} more</div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
               </div>
+
+              {isMobile && (
+                <div style={{ fontSize: 10, color: "#444", textAlign: "center", marginTop: 8 }}>
+                  Tap a day to see its matches
+                </div>
+              )}
 
               {/* Selected day detail panel */}
               {selectedDay && (
@@ -3696,6 +3738,7 @@ export default function App() {
                     <div style={{ fontSize: 11, color: "#555" }}>{selectedEvents.length} match{selectedEvents.length !== 1 ? "es" : ""}</div>
                   </div>
 
+                  <div style={{ padding: isMobile ? 10 : 0, display: "flex", flexDirection: "column", gap: isMobile ? 8 : 0 }}>
                   {selectedEvents.map((ev, i) => {
                     const evYears = [...new Set([...ev.players, ...ev.opponentPlayers].map(p => p.classYear))];
           const col = evYears.length === 1 ? classColor(evYears[0]) : "#e8c547";
@@ -3709,13 +3752,20 @@ export default function App() {
                     return (
                       <div key={i}
                         onClick={() => { setActiveTab("schools"); setSelectedCollege(ev.college); }}
-                        style={{ padding: "10px 16px", borderBottom: i < selectedEvents.length - 1 ? "1px solid #0d1a2e" : "none",
+                        style={isMobile ? {
+                          padding: "10px 12px", borderRadius: 10, cursor: "pointer",
+                          background: ev.game.arlington ? "#f7c94810" : "#0d1e3a",
+                          border: `1px solid ${ev.game.arlington ? "#f7c94840" : "#1a3260"}`,
+                          borderLeft: `3px solid ${ev.past ? "#333" : col}`,
+                          opacity: ev.past ? 0.6 : 1,
+                        } : { padding: "10px 16px", borderBottom: i < selectedEvents.length - 1 ? "1px solid #0d1a2e" : "none",
                           background: ev.past ? "transparent" : ev.game.arlington ? "#f7c94808" : "transparent",
                           cursor: "pointer", display: "flex", gap: 12, alignItems: "flex-start",
                         }}
-                        onMouseEnter={e => e.currentTarget.style.background = "#ffffff06"}
-                        onMouseLeave={e => e.currentTarget.style.background = ev.past ? "transparent" : ev.game.arlington ? "#f7c94808" : "transparent"}
+                        onMouseEnter={e => e.currentTarget.style.background = isMobile ? e.currentTarget.style.background : "#ffffff06"}
+                        onMouseLeave={e => e.currentTarget.style.background = isMobile ? e.currentTarget.style.background : (ev.past ? "transparent" : ev.game.arlington ? "#f7c94808" : "transparent")}
                       >
+                        <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
                         {/* Time column */}
                         <div style={{ width: 52, flexShrink: 0, textAlign: "right", paddingTop: 2 }}>
                           <div style={{ fontSize: 12, fontWeight: 700, color: ev.past ? "#333" : col }}>{timeStr !== "TBA" ? timeStr : "—"}</div>
@@ -3776,9 +3826,11 @@ export default function App() {
                             )}
                           </div>
                         </div>
+                        </div>
                       </div>
                     );
                   })}
+                  </div>
                 </div>
               )}
 
@@ -3812,6 +3864,7 @@ export default function App() {
                           </div>
 
                           {/* Games for this day */}
+                          <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 6 : 0 }}>
                           {evs.map((ev, j) => {
                             const evYears = [...new Set([...ev.players, ...ev.opponentPlayers].map(p => p.classYear))];
           const col = evYears.length === 1 ? classColor(evYears[0]) : "#e8c547";
@@ -3821,6 +3874,73 @@ export default function App() {
                             const timeStr = fmtTimeFull(ev.game.time);
                             const oppDisplay = ev.schoolB || fmtOpp(ev.game.opponent);
                             const away = ev.isArlingtonMatch ? false : isAway(ev.game.opponent);
+
+                            if (isMobile) {
+                              return (
+                                <div key={j}
+                                  onClick={() => { setActiveTab("schools"); setSelectedCollege(ev.college); }}
+                                  style={{
+                                    padding: "9px 11px", borderRadius: 9, cursor: "pointer",
+                                    background: ev.game.arlington ? "#f7c94810" : "#0d1e3a",
+                                    border: `1px solid ${ev.game.arlington ? "#f7c94840" : "#152848"}`,
+                                    borderLeft: `3px solid ${ev.past ? "#333" : col}`,
+                                    opacity: ev.past ? 0.55 : 1,
+                                  }}
+                                >
+                                  {/* Line 1: time + matchup */}
+                                  <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
+                                    <span style={{ fontSize: 11, fontWeight: 700, color: timeStr !== "TBA" ? col : "#2a3a5a", flexShrink: 0 }}>
+                                      {timeStr !== "TBA" ? timeStr : "TBA"}
+                                    </span>
+                                    {ev.game.arlington && <span style={{ fontSize: 10, color: "#f7c948" }}>⚡</span>}
+                                    <span style={{ fontSize: 12.5, fontWeight: 700, color: "#e8eef8" }}>{ev.schoolA || ev.college}</span>
+                                    <span style={{ fontSize: 10, color: "#2a3a5a" }}>{away ? "at" : "vs"}</span>
+                                    <span style={{ fontSize: 12.5, color: "#8899bb" }}>{oppDisplay}</span>
+                                  </div>
+
+                                  {/* Line 2: athletes */}
+                                  {(ev.players.length > 0 || ev.opponentPlayers.length > 0) && (
+                                    <div style={{ display: "flex", gap: 3, flexWrap: "wrap", marginTop: 5 }}>
+                                      {ev.players.map(p => (
+                                        <span key={p.name} style={{
+                                          fontSize: 9, color: col, background: `${col}15`,
+                                          border: `1px solid ${col}30`, borderRadius: 3, padding: "1px 5px", fontWeight: 600,
+                                        }}>
+                                          {p.name.split(" ")[0][0]}. {p.name.split(" ").slice(-1)[0]}
+                                          {selectedYears.size > 1 && <span style={{ opacity: 0.5, marginLeft: 2 }}>'{String(p.classYear).slice(2)}</span>}
+                                        </span>
+                                      ))}
+                                      {ev.opponentPlayers.map(p => (
+                                        <span key={p.name} style={{
+                                          fontSize: 9, color: "#47b8e8", background: "#47b8e815",
+                                          border: "1px solid #47b8e830", borderRadius: 3, padding: "1px 5px", fontWeight: 600,
+                                        }}>
+                                          {p.name.split(" ")[0][0]}. {p.name.split(" ").slice(-1)[0]}
+                                          {selectedYears.size > 1 && <span style={{ opacity: 0.5, marginLeft: 2 }}>'{String(p.classYear).slice(2)}</span>}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+
+                                  {/* Line 3: watch */}
+                                  <div style={{ marginTop: 5 }}>
+                                    {watchLabel && watchUrl ? (
+                                      <a href={watchUrl} target="_blank" rel="noopener noreferrer"
+                                        onClick={e => e.stopPropagation()}
+                                        style={{
+                                          fontSize: 9, fontWeight: 700,
+                                          color: free ? "#44cc44" : "#47b8e8",
+                                          background: free ? "#0a2a0a" : "#0a1a2a",
+                                          border: `1px solid ${free ? "#1a4a1a" : "#1a2a4a"}`,
+                                          borderRadius: 4, padding: "2px 7px", textDecoration: "none",
+                                        }}>
+                                        📺 {watchLabel.length > 22 ? watchLabel.slice(0,22)+"…" : watchLabel} ↗
+                                      </a>
+                                    ) : <span style={{ fontSize: 9, color: "#1a2a3a" }}>Watch TBA</span>}
+                                  </div>
+                                </div>
+                              );
+                            }
 
                             return (
                               <div key={j}
@@ -3889,6 +4009,7 @@ export default function App() {
                               </div>
                             );
                           })}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -4225,8 +4346,10 @@ export default function App() {
 
           const AthleteRow = ({ p, isFav }) => (
             <div style={{
-              display: "grid", gridTemplateColumns: "28px 1fr 1fr auto auto", gap: 10, alignItems: "center",
-              padding: "10px 16px", borderBottom: "1px solid #112040",
+              display: "grid",
+              gridTemplateColumns: isMobile ? "24px 1fr auto" : "28px 1fr 1fr auto auto",
+              gap: isMobile ? 8 : 10, alignItems: "center",
+              padding: isMobile ? "10px 12px" : "10px 16px", borderBottom: "1px solid #112040",
               background: isFav ? "linear-gradient(90deg,#e8c54708,transparent)" : "transparent",
             }}>
               {/* Star */}
@@ -4237,25 +4360,35 @@ export default function App() {
               }} title={isFav ? "Remove from favorites" : "Add to favorites"}>
                 {isFav ? "★" : "☆"}
               </button>
-              {/* Name */}
-              <div>
+              {/* Name (+ school inline below on mobile) */}
+              <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: "#e8eef8" }}>{p.name}</div>
                 {p.note && <div style={{ fontSize: 10, color: "#555", fontStyle: "italic", marginTop: 1 }}>{p.note}</div>}
+                {isMobile && (
+                  <button onClick={() => { setActiveTab("schools"); setSelectedCollege(p.college); }} style={{
+                    background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "left", marginTop: 2, display: "block",
+                  }}>
+                    <span style={{ fontSize: 11, color: "#2a7dd4", fontWeight: 600 }}>{p.college}</span>
+                    <span style={{ fontSize: 10, color: "#555" }}> · {p.conference} · {p.division}</span>
+                  </button>
+                )}
               </div>
-              {/* School — clickable */}
-              <button onClick={() => { setActiveTab("schools"); setSelectedCollege(p.college); }} style={{
-                background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "left",
-              }}>
-                <div style={{ fontSize: 12, color: "#2a7dd4", fontWeight: 600 }}>{p.college}</div>
-                <div style={{ fontSize: 10, color: "#555" }}>{p.conference} · {p.division}</div>
-              </button>
-              {/* Grad year */}
-              <span style={{ fontSize: 11, fontWeight: 700, color: yearColor[p.classYear], background: yearBg[p.classYear], border: `1px solid ${yearColor[p.classYear]}40`, borderRadius: 4, padding: "2px 8px", whiteSpace: "nowrap" }}>
-                '{String(p.classYear).slice(2)}
-              </span>
-              {/* Unconfirmed */}
-              {p.unconfirmed && <span style={{ fontSize: 9, color: "#e86420", border: "1px solid #e8642030", borderRadius: 3, padding: "1px 5px" }}>⚠</span>}
-              {!p.unconfirmed && <span />}
+              {/* School — clickable (desktop only, own column) */}
+              {!isMobile && (
+                <button onClick={() => { setActiveTab("schools"); setSelectedCollege(p.college); }} style={{
+                  background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "left",
+                }}>
+                  <div style={{ fontSize: 12, color: "#2a7dd4", fontWeight: 600 }}>{p.college}</div>
+                  <div style={{ fontSize: 10, color: "#555" }}>{p.conference} · {p.division}</div>
+                </button>
+              )}
+              {/* Grad year + unconfirmed flag, stacked on mobile */}
+              <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-end" : "center", gap: isMobile ? 3 : 10 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: yearColor[p.classYear], background: yearBg[p.classYear], border: `1px solid ${yearColor[p.classYear]}40`, borderRadius: 4, padding: "2px 8px", whiteSpace: "nowrap" }}>
+                  '{String(p.classYear).slice(2)}
+                </span>
+                {p.unconfirmed && <span style={{ fontSize: 9, color: "#e86420", border: "1px solid #e8642030", borderRadius: 3, padding: "1px 5px" }}>⚠</span>}
+              </div>
             </div>
           );
 
@@ -4279,12 +4412,16 @@ export default function App() {
 
               <div style={{ background: "#0d1e3a", border: "1px solid #1a3260", borderRadius: 12, overflow: "hidden" }}>
                 {/* Column headers */}
-                <div style={{ display: "grid", gridTemplateColumns: "28px 1fr 1fr auto auto", gap: 10, padding: "8px 16px", background: "#081428", borderBottom: "1px solid #1a3260" }}>
+                <div style={{
+                  display: "grid",
+                  gridTemplateColumns: isMobile ? "24px 1fr auto" : "28px 1fr 1fr auto auto",
+                  gap: isMobile ? 8 : 10, padding: isMobile ? "8px 12px" : "8px 16px", background: "#081428", borderBottom: "1px solid #1a3260",
+                }}>
                   <div />
-                  <div style={{ fontSize: 10, color: "#555", textTransform: "uppercase", letterSpacing: "0.1em" }}>Athlete</div>
-                  <div style={{ fontSize: 10, color: "#555", textTransform: "uppercase", letterSpacing: "0.1em" }}>School</div>
-                  <div style={{ fontSize: 10, color: "#555", textTransform: "uppercase", letterSpacing: "0.1em" }}>Class</div>
-                  <div />
+                  <div style={{ fontSize: 10, color: "#555", textTransform: "uppercase", letterSpacing: "0.1em" }}>Athlete{isMobile ? " / School" : ""}</div>
+                  {!isMobile && <div style={{ fontSize: 10, color: "#555", textTransform: "uppercase", letterSpacing: "0.1em" }}>School</div>}
+                  <div style={{ fontSize: 10, color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", textAlign: isMobile ? "right" : "left" }}>Class</div>
+                  {!isMobile && <div />}
                 </div>
 
                 {/* Favorites section */}
@@ -4325,10 +4462,10 @@ export default function App() {
               </div>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: selectedCollege ? "300px 1fr" : "1fr", gap: 18 }}>
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : (selectedCollege ? "300px 1fr" : "1fr"), gap: isMobile ? 14 : 18 }}>
 
               {/* School cards */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 7, order: isMobile && selectedCollege ? 2 : 0 }}>
                 {filteredColleges.map((college, idx) => {
                   const players = activePlayers.filter(p => p.college === college);
                   const div = players[0]?.division;
@@ -4449,7 +4586,14 @@ export default function App() {
 
               {/* Schedule panel */}
               {selectedCollege && schedule && (
-                <div>
+                <div style={{ order: isMobile ? 1 : 0 }}>
+                  {isMobile && (
+                    <button onClick={() => setSelectedCollege(null)} style={{
+                      display: "flex", alignItems: "center", gap: 6, marginBottom: 10,
+                      background: "#0d1e3a", border: "1px solid #1a3260", borderRadius: 8,
+                      color: "#8899bb", fontSize: 12, padding: "7px 12px", cursor: "pointer",
+                    }}>← All schools</button>
+                  )}
                   <div style={{ background: "#0d1e3a", border: "1px solid #2a2a44", borderRadius: 11, overflow: "hidden" }}>
                     {/* Header */}
                     <div style={{ background: "linear-gradient(135deg,#1a0a40,#0a2040)", padding: "16px 20px", borderBottom: "1px solid #2a2a44" }}>
