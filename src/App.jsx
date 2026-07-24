@@ -2441,8 +2441,22 @@ export default function App() {
       });
       if (!res.ok) return;
       const data = await res.json();
-      if (data.schools) setFavSchools(new Set(data.schools));
-      if (data.athletes) setFavAthletes(new Set(data.athletes));
+
+      // Load favorited athletes
+      const athleteSet = new Set(data.athletes || []);
+      setFavAthletes(athleteSet);
+
+      // Derive pinned schools from favorited athletes + any explicitly favorited schools
+      const allPlayers = [
+        ...PLAYERS.map(p => ({...p, classYear: 2026})),
+        ...PLAYERS_2025, ...PLAYERS_2024, ...PLAYERS_2023,
+      ];
+      const schoolsFromAthletes = new Set(
+        allPlayers.filter(p => athleteSet.has(p.name)).map(p => p.college)
+      );
+      // Merge with explicitly favorited schools from DB
+      const explicitSchools = new Set(data.schools || []);
+      setFavSchools(new Set([...schoolsFromAthletes, ...explicitSchools]));
     } catch {}
   };
 
