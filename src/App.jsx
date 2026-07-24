@@ -3094,17 +3094,22 @@ export default function App() {
           const selected = TYPES.find(t => t.id === feedbackType) || TYPES[0];
           const canSend = feedbackText.trim().length >= 10;
 
-          const handleSend = () => {
-            const sub = encodeURIComponent(selected.subject);
-            const body = encodeURIComponent(feedbackText.trim());
-            const link = document.createElement("a");
-            link.href = `mailto:kevgriz@gmail.com?subject=${sub}&body=${body}`;
-            link.target = "_blank";
-            link.rel = "noopener noreferrer";
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            setFeedbackSent(true);
+          const handleSend = async () => {
+            try {
+              const res = await fetch("/.netlify/functions/contact", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ type: feedbackType, message: feedbackText.trim() }),
+              });
+              if (res.ok) {
+                setFeedbackSent(true);
+              } else {
+                // Fall back to clipboard if function fails
+                handleCopy();
+              }
+            } catch {
+              handleCopy();
+            }
           };
 
           const handleCopy = () => {
@@ -3192,8 +3197,8 @@ export default function App() {
                     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                       {/* Primary: mailto link */}
                       <a
-                        href={`mailto:kevgriz@gmail.com?subject=${encodeURIComponent(selected.subject)}&body=${encodeURIComponent(feedbackText.trim())}`}
-                        onClick={canSend ? handleSend : e => e.preventDefault()}
+                        href="#"
+                        onClick={e => { e.preventDefault(); if (canSend) handleSend(); }}
                         style={{
                           display: "block", textAlign: "center",
                           padding: "11px 0", borderRadius: 10,
@@ -3201,11 +3206,10 @@ export default function App() {
                           color: canSend ? "#fff" : "#2a3a5a",
                           fontSize: 14, fontWeight: 700,
                           textDecoration: "none", cursor: canSend ? "pointer" : "default",
-                          pointerEvents: canSend ? "auto" : "none",
                           transition: "all 0.15s",
                         }}
                       >
-                        📧 Open in Email App
+                        📧 Send Request
                       </a>
                       {/* Fallback: copy to clipboard */}
                       <button
