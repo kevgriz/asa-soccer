@@ -2290,6 +2290,8 @@ export default function App() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const searchRef = useRef(null);
+  const schedulePanelRef = useRef(null);
+  const [scheduleJustOpened, setScheduleJustOpened] = useState(false);
   const [athleteSort, setAthleteSort] = useState("firstName");
   const [calMonthKey, setCalMonthKey] = useState(null); // null = auto (current/first with games)
   const [calSelectedDay, setCalSelectedDay] = useState(null);
@@ -2316,6 +2318,17 @@ export default function App() {
   }, []);
   const isMobile = vw < 640;
   const isNarrow = vw < 420;
+
+  // ── Scroll to + flash the schedule panel whenever a school is selected ────
+  useEffect(() => {
+    if (!selectedCollege) return;
+    const id = requestAnimationFrame(() => {
+      schedulePanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    setScheduleJustOpened(true);
+    const t = setTimeout(() => setScheduleJustOpened(false), 1400);
+    return () => { cancelAnimationFrame(id); clearTimeout(t); };
+  }, [selectedCollege]);
 
   // ── Tour keyboard navigation ─────────────────────────────────────────────
   useEffect(() => {
@@ -2736,6 +2749,11 @@ export default function App() {
           .user-details { display: flex !important; }
         }
         ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #09111f; } ::-webkit-scrollbar-thumb { background: #1a3260; border-radius: 3px; }
+        @keyframes schedulePanelFlash {
+          0%   { box-shadow: 0 0 0 3px rgba(42,125,212,0.9), 0 0 24px rgba(42,125,212,0.5); }
+          70%  { box-shadow: 0 0 0 3px rgba(42,125,212,0.5), 0 0 24px rgba(42,125,212,0.25); }
+          100% { box-shadow: 0 0 0 0 rgba(42,125,212,0); }
+        }
       `}</style>
       {showWelcome && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
@@ -4586,7 +4604,7 @@ export default function App() {
 
               {/* Schedule panel */}
               {selectedCollege && schedule && (
-                <div style={{ order: isMobile ? 1 : 0 }}>
+                <div ref={schedulePanelRef} style={{ order: isMobile ? 1 : 0, scrollMarginTop: 16 }}>
                   {isMobile && (
                     <button onClick={() => setSelectedCollege(null)} style={{
                       display: "flex", alignItems: "center", gap: 6, marginBottom: 10,
@@ -4594,7 +4612,10 @@ export default function App() {
                       color: "#8899bb", fontSize: 12, padding: "7px 12px", cursor: "pointer",
                     }}>← All schools</button>
                   )}
-                  <div style={{ background: "#0d1e3a", border: "1px solid #2a2a44", borderRadius: 11, overflow: "hidden" }}>
+                  <div style={{
+                    background: "#0d1e3a", border: "1px solid #2a2a44", borderRadius: 11, overflow: "hidden",
+                    animation: scheduleJustOpened ? "schedulePanelFlash 1.4s ease-out" : "none",
+                  }}>
                     {/* Header */}
                     <div style={{ background: "linear-gradient(135deg,#1a0a40,#0a2040)", padding: "16px 20px", borderBottom: "1px solid #2a2a44" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
