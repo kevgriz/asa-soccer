@@ -2280,15 +2280,7 @@ export default function App() {
     if (!SHEET_URL) return;
     fetch(SHEET_URL)
       .then(r => r.json())
-      .then(data => {
-        console.log("=== SHEET DATA RECEIVED ===");
-        console.log("Athletes count:", data.athletes?.length);
-        console.log("Schools count:", data.schools?.length);
-        console.log("Games count:", data.games?.length);
-        console.log("First 3 games raw:", JSON.stringify(data.games?.slice(0,3)));
-        console.log("Meta:", JSON.stringify(data.meta));
-        setSheetData(data); setSheetLoading(false);
-      })
+      .then(data => { setSheetData(data); setSheetLoading(false); })
       .catch(err => { console.error("Sheet fetch error:", err); setSheetError(true); setSheetLoading(false); });
   }, []);
   const [selectedCollege, setSelectedCollege] = useState(null);
