@@ -2453,7 +2453,10 @@ export default function App() {
     try { localStorage.setItem("arlUser", JSON.stringify(updated)); } catch {}
   };
 
-  // ── Favorites (use user-scoped keys if logged in) ─────────────────────
+  // Load favorites from Supabase on page load if user is already logged in
+  useEffect(() => {
+    if (authToken) loadFavoritesFromDB(authToken);
+  }, []);
   const favKey = (k) => user ? `arlFav_${user.email}_${k}` : `arlFav${k}`;
   const [favSchools, setFavSchools] = useState(() => {
     try {
@@ -2495,6 +2498,14 @@ export default function App() {
       const wasFav = next.has(name);
       wasFav ? next.delete(name) : next.add(name);
       try { localStorage.setItem(favKey("Athletes"), JSON.stringify([...next])); } catch {}
+      // Sync to Supabase if logged in
+      if (authToken) {
+        fetch("/.netlify/functions/favorites", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "toggleAthlete", token: authToken, athleteName: name, college }),
+        }).catch(() => {});
+      }
 
       // If un-favoriting, only remove school pin if no other favorited athlete attends it
       if (college) {
@@ -2508,7 +2519,6 @@ export default function App() {
           );
           const nextSchools = new Set(prevSchools);
           if (wasFav) {
-            // Only unpin school if no remaining favorited athletes are there
             if (!schoolHasFav) nextSchools.delete(college);
           } else {
             nextSchools.add(college);
