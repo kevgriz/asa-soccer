@@ -2356,10 +2356,14 @@ export default function App() {
   const [authEmail, setAuthEmail] = useState("");
   const [authName, setAuthName] = useState("");
   const [authPhone, setAuthPhone] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
   const [notifyEmail, setNotifyEmail] = useState(true);
   const [notifyText, setNotifyText] = useState(false);
-  const [authStep, setAuthStep] = useState("form"); // "form" | "success"
+  const [authStep, setAuthStep] = useState("form"); // "form" | "success" | "loading"
   const [authError, setAuthError] = useState("");
+  const [authToken, setAuthToken] = useState(() => {
+    try { return localStorage.getItem("arlToken") || null; } catch { return null; }
+  });
 
   const dismissWelcome = (openReg = false) => {
     try { localStorage.setItem("arlWelcomeSeen", "1"); } catch {}
@@ -2367,30 +2371,79 @@ export default function App() {
     if (openReg) { setAuthMode("register"); setShowAuth(true); }
   };
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (!authEmail.includes("@")) { setAuthError("Please enter a valid email address."); return; }
-    const newUser = { name: authName || authEmail.split("@")[0], email: authEmail, phone: authPhone, notifyEmail, notifyText, createdAt: Date.now() };
-    try { localStorage.setItem("arlUser", JSON.stringify(newUser)); } catch {}
-    setUser(newUser);
-    setAuthStep("success");
+    if (!authPassword || authPassword.length < 6) { setAuthError("Password must be at least 6 characters."); return; }
+    setAuthStep("loading");
     setAuthError("");
+    try {
+      const res = await fetch("/.netlify/functions/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "register", email: authEmail, password: authPassword, name: authName }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setAuthError(data.error || "Registration failed."); setAuthStep("form"); return; }
+      const newUser = { name: authName || authEmail.split("@")[0], email: authEmail, phone: authPhone, notifyEmail, notifyText };
+      try { localStorage.setItem("arlUser", JSON.stringify(newUser)); } catch {}
+      setUser(newUser);
+      setAuthStep("success");
+    } catch {
+      setAuthError("Network error. Please try again.");
+      setAuthStep("form");
+    }
   };
 
-  const handleLogin = () => {
-    // In production this would validate against a backend; for now simulate with stored email
-    const stored = JSON.parse(localStorage.getItem("arlUser") || "null");
-    if (stored && stored.email === authEmail) {
-      setUser(stored);
+  const handleLogin = async () => {
+    if (!authEmail.includes("@")) { setAuthError("Please enter a valid email address."); return; }
+    if (!authPassword) { setAuthError("Please enter your password."); return; }
+    setAuthStep("loading");
+    setAuthError("");
+    try {
+      const res = await fetch("/.netlify/functions/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "login", email: authEmail, password: authPassword }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setAuthError(data.error || "Login failed. Check your email and password."); setAuthStep("form"); return; }
+      const token = data.session?.access_token;
+      if (token) { try { localStorage.setItem("arlToken", token); } catch {} setAuthToken(token); }
+      const newUser = { name: data.user?.user_metadata?.name || authEmail.split("@")[0], email: authEmail, phone: authPhone, notifyEmail, notifyText };
+      try { localStorage.setItem("arlUser", JSON.stringify(newUser)); } catch {}
+      setUser(newUser);
       setShowAuth(false);
       setAuthEmail("");
-    } else {
-      setAuthError("Email not found. Please register first.");
+      setAuthPassword("");
+      setAuthStep("form");
+      // Load favorites from Supabase
+      if (token) loadFavoritesFromDB(token);
+    } catch {
+      setAuthError("Network error. Please try again.");
+      setAuthStep("form");
     }
   };
 
   const handleLogout = () => {
     setUser(null);
-    try { localStorage.removeItem("arlUser"); } catch {}
+    setAuthToken(null);
+    setFavSchools(new Set());
+    setFavAthletes(new Set());
+    try { localStorage.removeItem("arlUser"); localStorage.removeItem("arlToken"); } catch {}
+  };
+
+  const loadFavoritesFromDB = async (token) => {
+    try {
+      const res = await fetch("/.netlify/functions/favorites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "getFavorites", token }),
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.schools) setFavSchools(new Set(data.schools));
+      if (data.athletes) setFavAthletes(new Set(data.athletes));
+    } catch {}
   };
 
   const saveNotificationPrefs = () => {
@@ -2423,6 +2476,14 @@ export default function App() {
       const next = new Set(prev);
       next.has(college) ? next.delete(college) : next.add(college);
       try { localStorage.setItem(favKey("Schools"), JSON.stringify([...next])); } catch {}
+      // Sync to Supabase if logged in
+      if (authToken) {
+        fetch("/.netlify/functions/favorites", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "toggleSchool", token: authToken, college }),
+        }).catch(() => {});
+      }
       return next;
     });
   };
@@ -2858,6 +2919,13 @@ export default function App() {
                         style={{ width: "100%", padding: "9px 12px", borderRadius: 7, border: "1px solid #1a3260", background: "#0b1a32", color: "#e8eef8", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
                     </div>
 
+                    <div>
+                      <label style={{ fontSize: 11, color: "#8899bb", display: "block", marginBottom: 4 }}>Password {authMode === "register" && <span style={{ color: "#2a3a5a" }}>(min 6 characters)</span>}</label>
+                      <input type="password" value={authPassword} onChange={e => setAuthPassword(e.target.value)}
+                        placeholder="••••••••"
+                        style={{ width: "100%", padding: "9px 12px", borderRadius: 7, border: "1px solid #1a3260", background: "#0b1a32", color: "#e8eef8", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+                    </div>
+
                     {authMode === "register" && (
                       <>
                         <div>
@@ -2892,12 +2960,12 @@ export default function App() {
 
                     {authError && <div style={{ fontSize: 12, color: "#e83050", background: "#C8102E15", border: "1px solid #C8102E30", borderRadius: 6, padding: "8px 12px" }}>{authError}</div>}
 
-                    <button onClick={authMode === "register" ? handleRegister : handleLogin} style={{
+                    <button onClick={authStep === "loading" ? undefined : (authMode === "register" ? handleRegister : handleLogin)} style={{
                       width: "100%", padding: "12px 20px", borderRadius: 8, border: "none",
-                      background: "#C8102E", color: "#fff", fontSize: 14, fontWeight: 700,
-                      cursor: "pointer", marginTop: 4,
+                      background: authStep === "loading" ? "#1a3260" : "#C8102E", color: "#fff", fontSize: 14, fontWeight: 700,
+                      cursor: authStep === "loading" ? "default" : "pointer", marginTop: 4,
                     }}>
-                      {authMode === "register" ? "Create account" : "Sign in"}
+                      {authStep === "loading" ? "Please wait..." : (authMode === "register" ? "Create account" : "Sign in")}
                     </button>
                     <button onClick={() => { setShowAuth(false); setAuthStep("form"); setAuthError(""); }} style={{
                       background: "none", border: "none", color: "#2a3a5a", fontSize: 12,
