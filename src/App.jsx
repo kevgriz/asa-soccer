@@ -2278,9 +2278,13 @@ export default function App() {
   // Fetch live data from Google Sheet on mount (only if URL is configured)
   useEffect(() => {
     if (!SHEET_URL) return;
-    fetch(SHEET_URL)
+    fetch(SHEET_URL + "?t=" + Date.now(), { redirect: "follow" })
       .then(r => r.json())
-      .then(data => { setSheetData(data); setSheetLoading(false); })
+      .then(data => {
+        const uscGames = data.games?.filter(g => g.college === "USC").slice(0, 3);
+        console.log("USC games from sheet:", JSON.stringify(uscGames));
+        setSheetData(data); setSheetLoading(false);
+      })
       .catch(err => { console.error("Sheet fetch error:", err); setSheetError(true); setSheetLoading(false); });
   }, []);
   const [selectedCollege, setSelectedCollege] = useState(null);
