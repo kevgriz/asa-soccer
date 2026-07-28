@@ -6,15 +6,20 @@ exports.handler = async (event) => {
     process.env.SUPABASE_SERVICE_KEY
   );
 
-  const { action, email, password, name } = JSON.parse(event.body);
+  const { action, email, password, name, phone, notifyEmail, notifyText, token } = JSON.parse(event.body);
 
   if (action === "register") {
     const { data, error } = await supabase.auth.admin.createUser({
       email, password, email_confirm: true
     });
     if (error) return { statusCode: 400, body: JSON.stringify({ error: error.message }) };
-    if (name && data.user) {
-      await supabase.from("profiles").update({ name }).eq("id", data.user.id);
+    if (data.user) {
+      await supabase.from("profiles").update({
+        name: name || email.split("@")[0],
+        phone: phone || null,
+        notify_email: notifyEmail !== false,
+        notify_text: notifyText === true,
+      }).eq("id", data.user.id);
     }
     return { statusCode: 200, body: JSON.stringify({ user: data.user }) };
   }
@@ -27,6 +32,17 @@ exports.handler = async (event) => {
     const { data, error } = await anonClient.auth.signInWithPassword({ email, password });
     if (error) return { statusCode: 400, body: JSON.stringify({ error: error.message }) };
     return { statusCode: 200, body: JSON.stringify({ user: data.user, session: data.session }) };
+  }
+
+  if (action === "updatePrefs") {
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) return { statusCode: 401, body: JSON.stringify({ error: "Unauthorized" }) };
+    await supabase.from("profiles").update({
+      phone: phone || null,
+      notify_email: notifyEmail !== false,
+      notify_text: notifyText === true,
+    }).eq("id", user.id);
+    return { statusCode: 200, body: JSON.stringify({ ok: true }) };
   }
 
   return { statusCode: 400, body: JSON.stringify({ error: "Unknown action" }) };
