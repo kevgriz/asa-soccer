@@ -2302,9 +2302,38 @@ export default function App() {
     fetch(SHEET_URL + "?t=" + Date.now(), { redirect: "follow" })
       .then(r => r.json())
       .then(data => {
-        const uscGames = data.games?.filter(g => g.college === "USC").slice(0, 3);
-        console.log("USC games from sheet:", JSON.stringify(uscGames));
-        setSheetData(data); setSheetLoading(false);
+        // Set schedule data directly into liveSchedules state
+        if (data.games) {
+          const byCollege = {};
+          data.games.forEach(g => {
+            if (!byCollege[g.college]) byCollege[g.college] = [];
+            const dateStr = normalizeSheetDate(g.date);
+            const timeStr = normalizeSheetTime(g.time);
+            byCollege[g.college].push({
+              date: dateStr, day: g.day || "",
+              opponent: (g.arlingtonRivalry === true || g.arlingtonRivalry === "TRUE")
+                ? g.opponent + " ⚡" : g.opponent,
+              type: g.type, time: timeStr,
+              home: g.homeAway === "Home",
+              neutral: g.neutral || undefined,
+              arlington: g.arlingtonRivalry === true || g.arlingtonRivalry === "TRUE",
+            });
+          });
+          const result = {};
+          Object.keys(SCHEDULES).forEach(col => {
+            result[col] = byCollege[col]
+              ? { ...SCHEDULES[col], games: byCollege[col] }
+              : SCHEDULES[col];
+          });
+          setLiveSchedules(result);
+        }
+        if (data.athletes) {
+          setLivePlayers(data.athletes
+            .filter(a => a.active !== false && a.active !== "FALSE")
+            .map(a => ({ ...a, classYear: parseInt(a.classYear) })));
+        }
+        setSheetData(data);
+        setSheetLoading(false);
       })
       .catch(err => { console.error("Sheet fetch error:", err); setSheetError(true); setSheetLoading(false); });
   }, []);
@@ -2609,37 +2638,6 @@ export default function App() {
   // ── Live schedule state — updated when sheet data arrives ─────────────
   const [liveSchedules, setLiveSchedules] = useState(SCHEDULES);
   const [livePlayers, setLivePlayers] = useState(FALLBACK_PLAYERS);
-
-  useEffect(() => {
-    if (!sheetData?.games) return;
-    const byCollege = {};
-    sheetData.games.forEach(g => {
-      if (!byCollege[g.college]) byCollege[g.college] = [];
-      const dateStr = normalizeSheetDate(g.date);
-      const timeStr = normalizeSheetTime(g.time);
-      byCollege[g.college].push({
-        date: dateStr, day: g.day || "",
-        opponent: (g.arlingtonRivalry === true || g.arlingtonRivalry === "TRUE")
-          ? g.opponent + " ⚡" : g.opponent,
-        type: g.type, time: timeStr,
-        home: g.homeAway === "Home",
-        neutral: g.neutral || undefined,
-        arlington: g.arlingtonRivalry === true || g.arlingtonRivalry === "TRUE",
-      });
-    });
-    const result = {};
-    Object.keys(SCHEDULES).forEach(col => {
-      result[col] = byCollege[col]
-        ? { ...SCHEDULES[col], games: byCollege[col] }
-        : SCHEDULES[col];
-    });
-    setLiveSchedules(result);
-    if (sheetData.athletes) {
-      setLivePlayers(sheetData.athletes
-        .filter(a => a.active !== false && a.active !== "FALSE")
-        .map(a => ({ ...a, classYear: parseInt(a.classYear) })));
-    }
-  }, [sheetData]);
 
   const LIVE_SCHEDULES = liveSchedules;
   const LIVE_PLAYERS_RAW = livePlayers;
