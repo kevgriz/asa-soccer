@@ -2291,10 +2291,19 @@ const normalizeSheetTime = (val) => {
   return "TBA";
 };
 
+const FALLBACK_PLAYERS = [
+  ...PLAYERS.map(p => ({ ...p, classYear: 2026 })),
+  ...PLAYERS_2025,
+  ...PLAYERS_2024,
+  ...PLAYERS_2023,
+];
+
 export default function App() {
   const [sheetData, setSheetData] = useState(null);
   const [sheetLoading, setSheetLoading] = useState(!!SHEET_URL);
   const [sheetError, setSheetError] = useState(false);
+  const [liveSchedules, setLiveSchedules] = useState(SCHEDULES);
+  const [livePlayers, setLivePlayers] = useState(FALLBACK_PLAYERS);
 
   // Fetch live data from Google Sheet on mount (only if URL is configured)
   useEffect(() => {
@@ -2628,19 +2637,8 @@ export default function App() {
   const include2026 = selectedYears.has("2026");
 
   // ── Google Sheet data merge (must come after all hooks, before any derived state) ──
-  const FALLBACK_PLAYERS = [
-    ...PLAYERS.map(p => ({ ...p, classYear: 2026 })),
-    ...PLAYERS_2025,
-    ...PLAYERS_2024,
-    ...PLAYERS_2023,
-  ];
 
   // ── Live schedule state — updated when sheet data arrives ─────────────
-  const [liveSchedules, setLiveSchedules] = useState(SCHEDULES);
-  const [livePlayers, setLivePlayers] = useState(FALLBACK_PLAYERS);
-
-  const LIVE_SCHEDULES = liveSchedules;
-  const LIVE_PLAYERS_RAW = livePlayers;
 
   const normalizeSheetTime = (val) => {
     if (!val) return "TBA";
@@ -2671,7 +2669,7 @@ export default function App() {
 
   // Merge player lists and WATCH based on selected years
   const ALL_WATCH = { ...WATCH, ...WATCH_2025_EXTRA, ...WATCH_2024_EXTRA, ...WATCH_2023_EXTRA };
-  const activePlayers = LIVE_PLAYERS_RAW.filter(p => {
+  const activePlayers = livePlayers.filter(p => {
     if (p.classYear === 2026 && !include2026) return false;
     if (p.classYear === 2025 && !include2025) return false;
     if (p.classYear === 2024 && !include2024) return false;
@@ -2679,7 +2677,7 @@ export default function App() {
     return true;
   });
 
-  const totalAthletes = LIVE_PLAYERS_RAW.filter(p => selectedYears.has(String(p.classYear))).length;
+  const totalAthletes = livePlayers.filter(p => selectedYears.has(String(p.classYear))).length;
   const yearsLabel = [include2026 && "2026", include2025 && "2025", include2024 && "2024", include2023 && "2023"].filter(Boolean).join(", ");
 
   const colleges = [...new Set(activePlayers.map(p => p.college))].filter(c => c !== "TBD").sort();
@@ -2694,7 +2692,7 @@ export default function App() {
 
   const activeMatchups = getActiveMatchups(selectedYears, activePlayers);
   const selectedPlayers = selectedCollege ? activePlayers.filter(p => p.college === selectedCollege) : [];
-  const schedule = selectedCollege ? SCHEDULES[selectedCollege] : null;
+  const schedule = selectedCollege ? liveSchedules[selectedCollege] : null;
   const watchInfo = selectedCollege ? ALL_WATCH[selectedCollege] : null;
   const rivals = selectedCollege ? getArlingtonRivals(selectedCollege, selectedYears, activePlayers) : new Set();
 
@@ -2731,7 +2729,7 @@ export default function App() {
     });
 
     // Match schools
-    Object.keys(SCHEDULES).forEach(college => {
+    Object.keys(liveSchedules).forEach(college => {
       if (!seenColleges.has(college) && college.toLowerCase().includes(q)) {
         const players = ALL_PLAYERS_FOR_SEARCH.filter(p => p.college === college);
         results.push({ type: "school", label: college, sub: players.length ? players.map(p => p.name).join(", ") : "School", college });
@@ -2779,7 +2777,7 @@ export default function App() {
 
     // Collect every upcoming confirmed game across active schools
     const upcoming = [];
-    Object.entries(LIVE_SCHEDULES).forEach(([college, sched]) => {
+    Object.entries(liveSchedules).forEach(([college, sched]) => {
       if (!activeCollegeSet.has(college)) return;
       if (!sched.games) return;
       const collegePlayers = activePlayers.filter(p => p.college === college);
@@ -3454,7 +3452,7 @@ export default function App() {
           <span style={{ fontSize: 11, color: "#555", marginRight: 2 }}>Show classes:</span>
           {[
             { year: "2026", label: "2026 · ASA 08/07G", color: "#e8c547", bg: "#e8c54720", border: "#e8c54750", count: PLAYERS.length },
-            { year: "2025", label: "2025 · ASA 07/06G", color: "#e83050", bg: "#c8102e20", border: "#C8102E50", count: LIVE_PLAYERS_RAW.filter(p=>p.classYear===2025).length },
+            { year: "2025", label: "2025 · ASA 07/06G", color: "#e83050", bg: "#c8102e20", border: "#C8102E50", count: livePlayers.filter(p=>p.classYear===2025).length },
             { year: "2024", label: "2024 · ASA 06/05G", color: "#47e8b8", bg: "#47e8b820", border: "#47e8b850", count: PLAYERS_2024.length },
             { year: "2023", label: "2023 · ASA 05/04G", color: "#47b8e8", bg: "#47b8e820", border: "#47b8e850", count: PLAYERS_2023.length },
           ].map(({ year, label, color, bg, border, count }) => {
@@ -3592,7 +3590,7 @@ export default function App() {
           // Collect ALL confirmed games for active players — one event per unique game
           // For rivalry games (both teams have Arlington athletes), merge all players into one event
           const eventMap = new Map(); // key → event object
-          Object.entries(LIVE_SCHEDULES).forEach(([college, sched]) => {
+          Object.entries(liveSchedules).forEach(([college, sched]) => {
             if (!activeCollegeSet.has(college) || !sched.games) return;
             const collegePlayers = activePlayers.filter(p => p.college === college);
             if (!collegePlayers.length) return;
@@ -4567,7 +4565,7 @@ export default function App() {
                   const conf = players[0]?.conference;
                   const isSelected = selectedCollege === college;
                   const badge = DIV_BADGE[div] || DIV_BADGE["D1"];
-                  const sched = SCHEDULES[college];
+                  const sched = liveSchedules[college];
                   const statusB = STATUS_BADGE[sched?.status || "tba"];
                   const hasUnconfirmed = players.some(p => p.unconfirmed);
                   const allUnconfirmed = players.every(p => p.unconfirmed);
@@ -4578,7 +4576,7 @@ export default function App() {
                   const prevIsFav = idx > 0 ? favSchools.has(filteredColleges[idx - 1]) : true;
 
                   // Next upcoming game for this school
-                  const sched2 = SCHEDULES[college];
+                  const sched2 = liveSchedules[college];
                   const nextGame = (() => {
                     if (!sched2?.games) return null;
                     for (const g of sched2.games) {
