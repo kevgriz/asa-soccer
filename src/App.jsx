@@ -2270,6 +2270,27 @@ const DIV_BADGE = {
 // Leave as empty string to use the hardcoded data below (default during dev).
 const SHEET_URL = "https://script.google.com/macros/s/AKfycbxMWIv0eg10MO-zAgVsl2Og-72nLgZ_ZtO1gY8Z_ceK1Ug5zIE0EMg033JW4KhPiG1N9A/exec";
 
+const MONTH_ABBR = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+const normalizeSheetDate = (val) => {
+  if (!val) return "";
+  const s = String(val).trim();
+  if (s.match(/^\d{4}-\d{2}-\d{2}/)) { const d = new Date(s); return `${MONTH_ABBR[d.getUTCMonth()]} ${d.getUTCDate()}`; }
+  if (s.match(/^[A-Za-z]{3}\s+\d{1,2}$/)) return s;
+  if (val instanceof Date) return `${MONTH_ABBR[val.getUTCMonth()]} ${val.getUTCDate()}`;
+  if (typeof val === "number") { const d = new Date(Math.round((val - 25569) * 86400 * 1000)); return `${MONTH_ABBR[d.getUTCMonth()]} ${d.getUTCDate()}`; }
+  return s;
+};
+
+const normalizeSheetTime = (val) => {
+  if (!val) return "TBA";
+  const s = String(val).trim();
+  if (!s || s === "TBA" || s === "TBD") return "TBA";
+  if (s.match(/\d+:\d+\s*(AM|PM)/i)) return s.includes("ET") ? s : s + " ET";
+  if (val instanceof Date) { let h = val.getHours(), m = val.getMinutes(); const ampm = h >= 12 ? "PM" : "AM"; h = h % 12 || 12; return `${h}:${String(m).padStart(2,"0")} ${ampm} ET`; }
+  return "TBA";
+};
+
 export default function App() {
   const [sheetData, setSheetData] = useState(null);
   const [sheetLoading, setSheetLoading] = useState(!!SHEET_URL);
@@ -2622,26 +2643,6 @@ export default function App() {
 
   const LIVE_SCHEDULES = liveSchedules;
   const LIVE_PLAYERS_RAW = livePlayers;
-
-  const normalizeSheetDate = (val) => {
-    if (!val) return "";
-    const s = String(val).trim();
-    // ISO format from Google Sheets: "2026-08-12T04:00:00.000Z"
-    if (s.match(/^\d{4}-\d{2}-\d{2}/)) {
-      const d = new Date(s);
-      return `${MONTH_ABBR[d.getUTCMonth()]} ${d.getUTCDate()}`;
-    }
-    // Already in correct format: "Aug 12"
-    if (s.match(/^[A-Za-z]{3}\s+\d{1,2}$/)) return s;
-    // JS Date object
-    if (val instanceof Date) return `${MONTH_ABBR[val.getUTCMonth()]} ${val.getUTCDate()}`;
-    // Google Sheets serial number
-    if (typeof val === "number") {
-      const d = new Date(Math.round((val - 25569) * 86400 * 1000));
-      return `${MONTH_ABBR[d.getUTCMonth()]} ${d.getUTCDate()}`;
-    }
-    return s;
-  };
 
   const normalizeSheetTime = (val) => {
     if (!val) return "TBA";
