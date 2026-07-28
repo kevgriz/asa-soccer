@@ -2855,7 +2855,7 @@ export default function App() {
                 <div style={{ fontSize: 12, fontWeight: 700, color: "#e8c547", marginBottom: 10 }}>Create a free account to:</div>
                 {[
                   ["★", "Save favorite athletes and schools across devices"],
-                  ["🔔", "Get email or text alerts 24 hours before a favorite's match"],
+                  ["🔔", "Get email alerts 2 hours before a favorite's game"],
                   ["📌", "Pin your picks to the top of every list"],
                 ].map(([icon, text]) => (
                   <div key={text} style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 8 }}>
@@ -2903,7 +2903,7 @@ export default function App() {
                   <div style={{ fontSize: 40, marginBottom: 12 }}>✅</div>
                   <h3 style={{ margin: "0 0 8px", fontSize: 20, fontWeight: 800, color: "#fff" }}>You're in!</h3>
                   <p style={{ fontSize: 14, color: "#8899bb", margin: "0 0 20px", lineHeight: 1.6 }}>
-                    Welcome, {user?.name}. Your favorites will be saved and{user?.notifyEmail || user?.notifyText ? " you'll get match alerts" : " you can enable match alerts in your account settings"}.
+                    Welcome, {user?.name}. Your favorites will be saved and{user?.notifyEmail ? " you'll get email alerts before their games" : " you can enable email alerts in settings"}.
                   </p>
                   <button onClick={() => { setShowAuth(false); setAuthStep("form"); }} style={{
                     padding: "11px 28px", borderRadius: 8, border: "none",
@@ -2952,32 +2952,9 @@ export default function App() {
 
                     {authMode === "register" && (
                       <>
-                        <div>
-                          <label style={{ fontSize: 11, color: "#8899bb", display: "block", marginBottom: 4 }}>Mobile number <span style={{ color: "#2a3a5a" }}>(optional — for text alerts)</span></label>
-                          <input type="tel" value={authPhone} onChange={e => setAuthPhone(e.target.value)}
-                            placeholder="+1 (555) 000-0000"
-                            style={{ width: "100%", padding: "9px 12px", borderRadius: 7, border: "1px solid #1a3260", background: "#0b1a32", color: "#e8eef8", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
-                        </div>
-
                         <div style={{ background: "#0b1a32", border: "1px solid #1a3260", borderRadius: 8, padding: "14px 14px 10px" }}>
-                          <div style={{ fontSize: 11, color: "#e8c547", fontWeight: 700, marginBottom: 10 }}>🔔 Match alerts (24 hrs before)</div>
-                          {[
-                            { id: "email", label: "Email alerts", val: notifyEmail, set: setNotifyEmail },
-                            { id: "text",  label: "Text alerts", val: notifyText,  set: setNotifyText, note: "Requires mobile number above" },
-                          ].map(({ id, label, val, set, note }) => (
-                            <label key={id} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, cursor: "pointer" }}>
-                              <div onClick={() => set(!val)} style={{
-                                width: 36, height: 20, borderRadius: 10, position: "relative", cursor: "pointer", flexShrink: 0,
-                                background: val ? "#C8102E" : "#1a3260", transition: "background 0.2s",
-                              }}>
-                                <div style={{ position: "absolute", top: 2, left: val ? 18 : 2, width: 16, height: 16, borderRadius: 8, background: "#fff", transition: "left 0.2s" }} />
-                              </div>
-                              <div>
-                                <div style={{ fontSize: 13, color: "#e8eef8" }}>{label}</div>
-                                {note && <div style={{ fontSize: 10, color: "#2a3a5a" }}>{note}</div>}
-                              </div>
-                            </label>
-                          ))}
+                          <div style={{ fontSize: 11, color: "#e8c547", fontWeight: 700, marginBottom: 6 }}>🔔 Email alerts</div>
+                          <div style={{ fontSize: 12, color: "#8899bb" }}>You'll receive an email 2 hours before any favorited athlete's game.</div>
                         </div>
                       </>
                     )}
