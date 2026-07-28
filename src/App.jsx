@@ -2630,15 +2630,14 @@ export default function App() {
 
   const LIVE_SCHEDULES = sheetData?.games
     ? (() => {
-        const merged = JSON.parse(JSON.stringify(SCHEDULES));
+        // Group sheet games by college
         const byCollege = {};
         sheetData.games.forEach(g => {
           if (!byCollege[g.college]) byCollege[g.college] = [];
           const dateStr = normalizeSheetDate(g.date);
           const timeStr = normalizeSheetTime(g.time);
-          const dayStr  = g.day || "";
           byCollege[g.college].push({
-            date: dateStr, day: dayStr,
+            date: dateStr, day: g.day || "",
             opponent: (g.arlingtonRivalry === true || g.arlingtonRivalry === "TRUE")
               ? g.opponent + " ⚡" : g.opponent,
             type: g.type, time: timeStr,
@@ -2647,10 +2646,14 @@ export default function App() {
             arlington: g.arlingtonRivalry === true || g.arlingtonRivalry === "TRUE",
           });
         });
-        Object.keys(byCollege).forEach(col => {
-          if (merged[col]) merged[col].games = byCollege[col];
+        // Build merged object — spread each school, only replace games array
+        const result = {};
+        Object.keys(SCHEDULES).forEach(col => {
+          result[col] = byCollege[col]
+            ? { ...SCHEDULES[col], games: byCollege[col] }
+            : SCHEDULES[col];
         });
-        return merged;
+        return result;
       })()
     : SCHEDULES;
 
