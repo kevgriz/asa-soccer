@@ -2585,13 +2585,43 @@ export default function App() {
     ...PLAYERS_2023,
   ];
 
-  const LIVE_PLAYERS_RAW = sheetData?.athletes
-    ? sheetData.athletes
-        .filter(a => a.active !== false && a.active !== "FALSE")
-        .map(a => ({ ...a, classYear: parseInt(a.classYear) }))
-    : FALLBACK_PLAYERS;
+  // ── Live schedule state — updated when sheet data arrives ─────────────
+  const [liveSchedules, setLiveSchedules] = useState(SCHEDULES);
+  const [livePlayers, setLivePlayers] = useState(FALLBACK_PLAYERS);
 
-  const MONTH_ABBR = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  useEffect(() => {
+    if (!sheetData?.games) return;
+    const byCollege = {};
+    sheetData.games.forEach(g => {
+      if (!byCollege[g.college]) byCollege[g.college] = [];
+      const dateStr = normalizeSheetDate(g.date);
+      const timeStr = normalizeSheetTime(g.time);
+      byCollege[g.college].push({
+        date: dateStr, day: g.day || "",
+        opponent: (g.arlingtonRivalry === true || g.arlingtonRivalry === "TRUE")
+          ? g.opponent + " ⚡" : g.opponent,
+        type: g.type, time: timeStr,
+        home: g.homeAway === "Home",
+        neutral: g.neutral || undefined,
+        arlington: g.arlingtonRivalry === true || g.arlingtonRivalry === "TRUE",
+      });
+    });
+    const result = {};
+    Object.keys(SCHEDULES).forEach(col => {
+      result[col] = byCollege[col]
+        ? { ...SCHEDULES[col], games: byCollege[col] }
+        : SCHEDULES[col];
+    });
+    setLiveSchedules(result);
+    if (sheetData.athletes) {
+      setLivePlayers(sheetData.athletes
+        .filter(a => a.active !== false && a.active !== "FALSE")
+        .map(a => ({ ...a, classYear: parseInt(a.classYear) })));
+    }
+  }, [sheetData]);
+
+  const LIVE_SCHEDULES = liveSchedules;
+  const LIVE_PLAYERS_RAW = livePlayers;
 
   const normalizeSheetDate = (val) => {
     if (!val) return "";
@@ -2628,34 +2658,6 @@ export default function App() {
     return "TBA";
   };
 
-  const LIVE_SCHEDULES = sheetData?.games
-    ? (() => {
-        // Group sheet games by college
-        const byCollege = {};
-        sheetData.games.forEach(g => {
-          if (!byCollege[g.college]) byCollege[g.college] = [];
-          const dateStr = normalizeSheetDate(g.date);
-          const timeStr = normalizeSheetTime(g.time);
-          byCollege[g.college].push({
-            date: dateStr, day: g.day || "",
-            opponent: (g.arlingtonRivalry === true || g.arlingtonRivalry === "TRUE")
-              ? g.opponent + " ⚡" : g.opponent,
-            type: g.type, time: timeStr,
-            home: g.homeAway === "Home",
-            neutral: g.neutral || undefined,
-            arlington: g.arlingtonRivalry === true || g.arlingtonRivalry === "TRUE",
-          });
-        });
-        // Build merged object — spread each school, only replace games array
-        const result = {};
-        Object.keys(SCHEDULES).forEach(col => {
-          result[col] = byCollege[col]
-            ? { ...SCHEDULES[col], games: byCollege[col] }
-            : SCHEDULES[col];
-        });
-        return result;
-      })()
-    : SCHEDULES;
 
   if (sheetLoading) return (
     <div style={{ minHeight: "100vh", background: "#060e1c", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
