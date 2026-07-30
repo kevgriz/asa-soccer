@@ -3087,7 +3087,7 @@ export default function App() {
               icon: "✏️",
               title: "Submit a Request",
               tab: null,
-              body: "See a missing athlete, an incorrect score, or a schedule change? Tap the ✏️ pencil icon in the top-right corner to open the request form. Choose a category (add athlete, remove athlete, schedule correction, school update, or other), describe the change, then click 'Open in Email App' to send it directly to the tracker team — or copy the message to your clipboard if your email app doesn't open automatically.",
+              body: "See a missing athlete, a schedule change, or a school update? Tap the ✏ pencil icon in the top-right corner to open the request form. Choose a category (add athlete, remove athlete, schedule correction, school/conference update, or other), describe the change, and click Send Request — your message goes directly and silently to the tracker team. No email app required.",
               tip: "The tracker is updated regularly — most corrections appear within a few days of being submitted.",
             },
           ];
