@@ -21,7 +21,7 @@ exports.handler = async (event) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "ASA Tracker <onboarding@resend.dev>",
+        from: "ASA Tracker <alerts@arlingtonsoccercollegegames.com>",
         to:   "kevgriz@gmail.com",
         subject: subjects[type] || subjects.other,
         text: message,

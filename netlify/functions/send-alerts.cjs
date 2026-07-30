@@ -130,7 +130,7 @@ ASA College Soccer Tracker`;
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: 'ASA Tracker <onboarding@resend.dev>',
+          from: 'ASA Tracker <alerts@arlingtonsoccercollegegames.com>',
           to: profile.email,
           subject: `Game Alert: Your athletes play today!`,
           text: emailBody,

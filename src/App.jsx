@@ -3080,7 +3080,7 @@ export default function App() {
               icon: "👤",
               title: "Sign In & Alerts",
               tab: null,
-              body: "Create a free account to save favorite athletes and receive match-day alerts. Registered users can opt in to email or text notifications before games involving their favorites. Your favorites are saved across sessions — sign in on any device to access them. Use the ⚙ Alerts button once signed in to update your notification preferences.",
+              body: "Create a free account to save favorite athletes and receive match-day alerts. Registered users receive email notifications 2 hours before games involving their favorites. Your favorites are saved across sessions — sign in on any device to access them.",
               tip: "Alerts are sent 2 hours before kickoff for any favorited athlete's confirmed games.",
             },
             {
