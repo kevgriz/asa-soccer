@@ -1,14 +1,29 @@
 const { createClient } = require('@supabase/supabase-js');
 
 const MONTH_NUMS = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
+const MONTH_ABBR = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
 function parseGameDateET(dateStr, timeStr) {
   try {
     if (!timeStr || timeStr === 'TBA' || timeStr === 'TBD') return null;
-    const [mon, day] = dateStr.trim().split(' ');
-    const month = MONTH_NUMS[mon];
-    if (month === undefined) return null;
-    const d = parseInt(day);
+
+    // Parse the date — handles both "Aug 5" (plain text) and ISO "2026-08-05T04:00:00.000Z"
+    let month, day;
+    const s = String(dateStr).trim();
+    if (s.match(/^\d{4}-\d{2}-\d{2}/)) {
+      // ISO format from Google Sheets — use UTC date parts to get the ET date
+      const d = new Date(s);
+      month = d.getUTCMonth();
+      day = d.getUTCDate();
+    } else {
+      // Plain text "Aug 5"
+      const parts = s.split(' ');
+      month = MONTH_NUMS[parts[0]];
+      day = parseInt(parts[1]);
+      if (month === undefined || isNaN(day)) return null;
+    }
+
+    // Parse the time
     const timeMatch = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
     if (!timeMatch) return null;
     let h = parseInt(timeMatch[1]);
@@ -16,9 +31,10 @@ function parseGameDateET(dateStr, timeStr) {
     const ampm = timeMatch[3].toUpperCase();
     if (ampm === 'PM' && h !== 12) h += 12;
     if (ampm === 'AM' && h === 12) h = 0;
-    // Build an ET datetime string and parse it — JS handles the UTC rollover correctly
+
+    // Build ISO string with ET offset (-04:00 EDT) — JS handles date rollover automatically
     const pad = n => String(n).padStart(2, '0');
-    const etString = `2026-${pad(month+1)}-${pad(d)}T${pad(h)}:${pad(m)}:00-04:00`;
+    const etString = `2026-${pad(month+1)}-${pad(day)}T${pad(h)}:${pad(m)}:00-04:00`;
     return new Date(etString);
   } catch { return null; }
 }
