@@ -55,19 +55,25 @@ exports.handler = async () => {
   });
 
   console.log('send-alerts:', upcomingGames.length, 'games in alert window');
+  if (!upcomingGames.length) return { statusCode: 200, body: 'No games in window' };
 
-  if (!upcomingGames.length) {
-    return { statusCode: 200, body: 'No games in window' };
-  }
+  const [{ data: allFavAthletes }, { data: allFavSchools }] = await Promise.all([
+    supabase.from('favorite_athletes').select('user_id, athlete_name, college'),
+    supabase.from('favorite_schools').select('user_id, college'),
+  ]);
 
-  const { data: allFavAthletes } = await supabase
-    .from('favorite_athletes')
-    .select('user_id, athlete_name, college');
+  console.log('send-alerts: fav athletes rows:', allFavAthletes?.length, 'fav schools rows:', allFavSchools?.length);
 
-  const favsByUser = {};
+  const favAthletesByUser = {};
   (allFavAthletes || []).forEach(row => {
-    if (!favsByUser[row.user_id]) favsByUser[row.user_id] = [];
-    favsByUser[row.user_id].push({ athlete: row.athlete_name, college: row.college });
+    if (!favAthletesByUser[row.user_id]) favAthletesByUser[row.user_id] = [];
+    favAthletesByUser[row.user_id].push({ athlete: row.athlete_name, college: row.college });
+  });
+
+  const favSchoolsByUser = {};
+  (allFavSchools || []).forEach(row => {
+    if (!favSchoolsByUser[row.user_id]) favSchoolsByUser[row.user_id] = [];
+    favSchoolsByUser[row.user_id].push(row.college);
   });
 
   const { data: profiles } = await supabase
@@ -80,15 +86,17 @@ exports.handler = async () => {
   let alertsSent = 0;
 
   for (const profile of (profiles || [])) {
-    const userFavs = favsByUser[profile.id] || [];
-    if (!userFavs.length) continue;
+    const userFavAthletes = favAthletesByUser[profile.id] || [];
+    const userFavSchools  = favSchoolsByUser[profile.id]  || [];
+    if (!userFavAthletes.length && !userFavSchools.length) continue;
 
     const userAlerts = [];
     for (const game of upcomingGames) {
-      const matchingAthletes = userFavs
+      const matchingAthletes = userFavAthletes
         .filter(f => f.college === game.college)
         .map(f => f.athlete);
-      if (matchingAthletes.length) {
+      const schoolFavorited = userFavSchools.includes(game.college);
+      if (matchingAthletes.length || schoolFavorited) {
         userAlerts.push({ game, athletes: matchingAthletes });
       }
     }
@@ -98,10 +106,11 @@ exports.handler = async () => {
     const gameLines = userAlerts.map(({ game, athletes }) => {
       const opp = (game.opponent || '').replace(' [!]', '').replace(/^at /, '');
       const homeAway = game.homeAway === 'Home' ? 'vs' : 'at';
-      return `  - ${athletes.join(', ')} (${game.college} ${homeAway} ${opp}) at ${game.time}`;
+      const who = athletes.length ? athletes.join(', ') : game.college;
+      return `  - ${who} (${game.college} ${homeAway} ${opp}) at ${game.time}`;
     }).join('\n');
 
-    const emailBody = `Hi ${profile.name || 'there'},\n\nYour favorited athletes have games starting in about 2 hours!\n\n${gameLines}\n\nFollow along at: https://arlingtonsoccercollegegames.com\n\nGo Arlington!\nASA College Soccer Tracker`;
+    const emailBody = `Hi ${profile.name || 'there'},\n\nYour favorited athletes/schools have games starting in about 2 hours!\n\n${gameLines}\n\nFollow along at: https://arlingtonsoccercollegegames.com\n\nGo Arlington!\nASA College Soccer Tracker`;
 
     try {
       const emailRes = await fetch('https://api.resend.com/emails', {
@@ -117,7 +126,6 @@ exports.handler = async () => {
           text: emailBody,
         }),
       });
-
       if (emailRes.ok) {
         alertsSent++;
         console.log('send-alerts: alert sent to', profile.email);
