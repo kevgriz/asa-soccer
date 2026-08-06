@@ -16,9 +16,10 @@ function parseGameDateET(dateStr, timeStr) {
     const ampm = timeMatch[3].toUpperCase();
     if (ampm === 'PM' && h !== 12) h += 12;
     if (ampm === 'AM' && h === 12) h = 0;
-    const etOffsetMs = 4 * 60 * 60 * 1000;
-    const utcMs = Date.UTC(2026, month, d, h, m, 0) + etOffsetMs;
-    return new Date(utcMs);
+    // Build an ET datetime string and parse it — JS handles the UTC rollover correctly
+    const pad = n => String(n).padStart(2, '0');
+    const etString = `2026-${pad(month+1)}-${pad(d)}T${pad(h)}:${pad(m)}:00-04:00`;
+    return new Date(etString);
   } catch { return null; }
 }
 
@@ -50,7 +51,7 @@ exports.handler = async () => {
     const gd = parseGameDateET(g.date, g.time);
     if (!gd) return false;
     const inWindow = gd >= windowStart && gd <= windowEnd;
-    if (inWindow) console.log('send-alerts: game in window:', g.college, g.date, g.time);
+    if (inWindow) console.log('send-alerts: game in window:', g.college, g.date, g.time, '=', gd.toISOString());
     return inWindow;
   });
 
