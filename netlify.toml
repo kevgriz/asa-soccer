@@ -4,6 +4,17 @@
 
 [functions]
   node_bundler = "esbuild"
+  included_files = ["netlify/functions/**"]
 
 [functions."send-alerts"]
   schedule = "0 * * * *"
+  node_bundler = "esbuild"
+
+[functions."auth"]
+  node_bundler = "esbuild"
+
+[functions."favorites"]
+  node_bundler = "esbuild"
+
+[functions."contact"]
+  node_bundler = "esbuild"
