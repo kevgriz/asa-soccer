@@ -127,7 +127,7 @@ exports.handler = async () => {
       return `  - ${who} (${game.college} ${homeAway} ${opp}) at ${game.time}`;
     }).join('\n');
 
-    const emailBody = `Hi ${profile.name || 'there'},\n\nYour favorited athletes/schools have games starting in about 2 hours!\n\n${gameLines}\n\nFollow along at: https://arlingtonsoccercollegegames.com\n\nGo Arlington!\nASA College Soccer Tracker`;
+    const emailBody = `Hi ${profile.name || 'there'},\n\nYour favorited athletes/schools have games starting in a few hours!\n\n${gameLines}\n\nFollow along at: https://arlingtonsoccercollegegames.com\n\nGo Arlington!\nASA College Soccer Tracker`;
 
     try {
       const emailRes = await fetch('https://api.resend.com/emails', {
