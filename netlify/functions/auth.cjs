@@ -6,7 +6,8 @@ exports.handler = async (event) => {
     process.env.SUPABASE_SERVICE_KEY
   );
 
-  const { action, email, password, name, phone, notifyEmail, notifyText, token } = JSON.parse(event.body);
+  const body = JSON.parse(event.body);
+  const { action, email, password, name, phone, notifyEmail, notifyText, token, refreshToken } = body;
 
   if (action === "register") {
     const { data, error } = await supabase.auth.admin.createUser({
@@ -25,13 +26,17 @@ exports.handler = async (event) => {
   }
 
   if (action === "login") {
-    const anonClient = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_ANON_KEY
-    );
+    const anonClient = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
     const { data, error } = await anonClient.auth.signInWithPassword({ email, password });
     if (error) return { statusCode: 400, body: JSON.stringify({ error: error.message }) };
     return { statusCode: 200, body: JSON.stringify({ user: data.user, session: data.session }) };
+  }
+
+  if (action === "refresh") {
+    const anonClient = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+    const { data, error } = await anonClient.auth.refreshSession({ refresh_token: refreshToken });
+    if (error) return { statusCode: 401, body: JSON.stringify({ error: error.message }) };
+    return { statusCode: 200, body: JSON.stringify({ session: data.session }) };
   }
 
   if (action === "updatePrefs") {

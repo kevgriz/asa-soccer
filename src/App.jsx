@@ -2456,6 +2456,9 @@ export default function App() {
   const [authToken, setAuthToken] = useState(() => {
     try { return localStorage.getItem("arlToken") || null; } catch { return null; }
   });
+  const [refreshToken, setRefreshToken] = useState(() => {
+    try { return localStorage.getItem("arlRefreshToken") || null; } catch { return null; }
+  });
 
   const dismissWelcome = (openReg = false) => {
     try { localStorage.setItem("arlWelcomeSeen", "1"); } catch {}
@@ -2500,7 +2503,9 @@ export default function App() {
       const data = await res.json();
       if (!res.ok) { setAuthError(data.error || "Login failed. Check your email and password."); setAuthStep("form"); return; }
       const token = data.session?.access_token;
+      const rToken = data.session?.refresh_token;
       if (token) { try { localStorage.setItem("arlToken", token); } catch {} setAuthToken(token); }
+      if (rToken) { try { localStorage.setItem("arlRefreshToken", rToken); } catch {} setRefreshToken(rToken); }
       const newUser = { name: data.user?.user_metadata?.name || authEmail.split("@")[0], email: authEmail, phone: authPhone, notifyEmail, notifyText };
       try { localStorage.setItem("arlUser", JSON.stringify(newUser)); } catch {}
       setUser(newUser);
@@ -2521,8 +2526,13 @@ export default function App() {
     setAuthToken(null);
     setFavSchools(new Set());
     setFavAthletes(new Set());
-    try { localStorage.removeItem("arlUser"); localStorage.removeItem("arlToken"); } catch {}
+    try { localStorage.removeItem("arlUser"); localStorage.removeItem("arlToken"); localStorage.removeItem("arlRefreshToken"); } catch {}
   };
+
+  // Load favorites from Supabase on page load if user is already logged in
+  useEffect(() => {
+    if (authToken) loadFavoritesFromDB(authToken);
+  }, []);
 
   const loadFavoritesFromDB = async (token) => {
     try {
@@ -2559,10 +2569,54 @@ export default function App() {
     try { localStorage.setItem("arlUser", JSON.stringify(updated)); } catch {}
   };
 
-  // Load favorites from Supabase on page load if user is already logged in
+  // Auto-refresh token when it expires or is about to expire
   useEffect(() => {
-    if (authToken) loadFavoritesFromDB(authToken);
-  }, []);
+    if (!authToken || !refreshToken) return;
+
+    const checkAndRefresh = async () => {
+      try {
+        // Decode the JWT to check expiry (no library needed — just base64 decode the payload)
+        const payload = JSON.parse(atob(authToken.split('.')[1]));
+        const expiresAt = payload.exp * 1000; // convert to ms
+        const now = Date.now();
+        const fiveMinutes = 5 * 60 * 1000;
+
+        // Refresh if expired or expiring within 5 minutes
+        if (expiresAt - now < fiveMinutes) {
+          console.log("Token expiring soon, refreshing...");
+          const res = await fetch("/.netlify/functions/auth", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "refresh", refreshToken }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            const newToken = data.session?.access_token;
+            const newRefresh = data.session?.refresh_token;
+            if (newToken) {
+              try { localStorage.setItem("arlToken", newToken); } catch {}
+              setAuthToken(newToken);
+            }
+            if (newRefresh) {
+              try { localStorage.setItem("arlRefreshToken", newRefresh); } catch {}
+              setRefreshToken(newRefresh);
+            }
+            console.log("Token refreshed successfully");
+          } else {
+            // Refresh failed — token is invalid, sign user out gracefully
+            console.log("Token refresh failed, signing out");
+            setUser(null); setAuthToken(null); setRefreshToken(null);
+            try { localStorage.removeItem("arlUser"); localStorage.removeItem("arlToken"); localStorage.removeItem("arlRefreshToken"); } catch {}
+          }
+        }
+      } catch {}
+    };
+
+    // Check immediately on mount, then every 4 minutes
+    checkAndRefresh();
+    const interval = setInterval(checkAndRefresh, 4 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [authToken, refreshToken]);
   const favKey = (k) => user ? `arlFav_${user.email}_${k}` : `arlFav${k}`;
   const [favSchools, setFavSchools] = useState(() => {
     try {
