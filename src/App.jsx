@@ -2536,11 +2536,7 @@ export default function App() {
 
   const loadFavoritesFromDB = async (token) => {
     try {
-      const res = await fetch("/.netlify/functions/favorites", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "getFavorites", token }),
-      });
+      const res = await authedFetch("/.netlify/functions/favorites", { action: "getFavorites" });
       if (!res.ok) return;
       const data = await res.json();
 
@@ -2633,6 +2629,49 @@ export default function App() {
     } catch { return new Set(); }
   });
 
+  // Authenticated fetch — auto-refreshes token on 401, signs out if refresh fails
+  const authedFetch = async (url, body) => {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...body, token: authToken }),
+    });
+    if (res.status === 401 && refreshToken) {
+      // Try to refresh the token
+      try {
+        const rRes = await fetch("/.netlify/functions/auth", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "refresh", refreshToken }),
+        });
+        if (rRes.ok) {
+          const rData = await rRes.json();
+          const newToken = rData.session?.access_token;
+          const newRefresh = rData.session?.refresh_token;
+          if (newToken) {
+            try { localStorage.setItem("arlToken", newToken); } catch {}
+            setAuthToken(newToken);
+          }
+          if (newRefresh) {
+            try { localStorage.setItem("arlRefreshToken", newRefresh); } catch {}
+            setRefreshToken(newRefresh);
+          }
+          // Retry with new token
+          return fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...body, token: newToken }),
+          });
+        }
+      } catch {}
+      // Refresh failed — sign out gracefully
+      setUser(null); setAuthToken(null); setRefreshToken(null);
+      setFavSchools(new Set()); setFavAthletes(new Set());
+      try { localStorage.removeItem("arlUser"); localStorage.removeItem("arlToken"); localStorage.removeItem("arlRefreshToken"); } catch {}
+    }
+    return res;
+  };
+
   const toggleFavSchool = (e, college) => {
     e.stopPropagation();
     setFavSchools(prev => {
@@ -2641,11 +2680,7 @@ export default function App() {
       try { localStorage.setItem(favKey("Schools"), JSON.stringify([...next])); } catch {}
       // Sync to Supabase if logged in
       if (authToken) {
-        fetch("/.netlify/functions/favorites", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "toggleSchool", token: authToken, college }),
-        }).catch(() => {});
+        authedFetch("/.netlify/functions/favorites", { action: "toggleSchool", college }).catch(() => {});
       }
       return next;
     });
@@ -2660,11 +2695,7 @@ export default function App() {
       try { localStorage.setItem(favKey("Athletes"), JSON.stringify([...next])); } catch {}
       // Sync athlete to Supabase if logged in
       if (authToken) {
-        fetch("/.netlify/functions/favorites", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "toggleAthlete", token: authToken, athleteName: name, college }),
-        }).catch(() => {});
+        authedFetch("/.netlify/functions/favorites", { action: "toggleAthlete", athleteName: name, college }).catch(() => {});
       }
 
       if (college) {
@@ -2682,22 +2713,14 @@ export default function App() {
               nextSchools.delete(college);
               // Also remove school from Supabase favorite_schools
               if (authToken) {
-                fetch("/.netlify/functions/favorites", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ action: "toggleSchool", token: authToken, college }),
-                }).catch(() => {});
+                authedFetch("/.netlify/functions/favorites", { action: "toggleSchool", college }).catch(() => {});
               }
             }
           } else {
             nextSchools.add(college);
             // Also add school to Supabase favorite_schools so alerts work
             if (authToken) {
-              fetch("/.netlify/functions/favorites", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action: "toggleSchool", token: authToken, college }),
-              }).catch(() => {});
+              authedFetch("/.netlify/functions/favorites", { action: "toggleSchool", college }).catch(() => {});
             }
           }
           try { localStorage.setItem(favKey("Schools"), JSON.stringify([...nextSchools])); } catch {}
