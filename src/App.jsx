@@ -2604,7 +2604,7 @@ export default function App() {
       const wasFav = next.has(name);
       wasFav ? next.delete(name) : next.add(name);
       try { localStorage.setItem(favKey("Athletes"), JSON.stringify([...next])); } catch {}
-      // Sync to Supabase if logged in
+      // Sync athlete to Supabase if logged in
       if (authToken) {
         fetch("/.netlify/functions/favorites", {
           method: "POST",
@@ -2613,7 +2613,6 @@ export default function App() {
         }).catch(() => {});
       }
 
-      // If un-favoriting, only remove school pin if no other favorited athlete attends it
       if (college) {
         setFavSchools(prevSchools => {
           const allPlayers = [
@@ -2625,9 +2624,27 @@ export default function App() {
           );
           const nextSchools = new Set(prevSchools);
           if (wasFav) {
-            if (!schoolHasFav) nextSchools.delete(college);
+            if (!schoolHasFav) {
+              nextSchools.delete(college);
+              // Also remove school from Supabase favorite_schools
+              if (authToken) {
+                fetch("/.netlify/functions/favorites", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ action: "toggleSchool", token: authToken, college }),
+                }).catch(() => {});
+              }
+            }
           } else {
             nextSchools.add(college);
+            // Also add school to Supabase favorite_schools so alerts work
+            if (authToken) {
+              fetch("/.netlify/functions/favorites", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "toggleSchool", token: authToken, college }),
+              }).catch(() => {});
+            }
           }
           try { localStorage.setItem(favKey("Schools"), JSON.stringify([...nextSchools])); } catch {}
           return nextSchools;
