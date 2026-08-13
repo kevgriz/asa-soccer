@@ -2536,7 +2536,11 @@ export default function App() {
 
   const loadFavoritesFromDB = async (token) => {
     try {
-      const res = await authedFetch("/.netlify/functions/favorites", { action: "getFavorites" });
+      const res = await fetch("/.netlify/functions/favorites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "getFavorites", token }),
+      });
       if (!res.ok) return;
       const data = await res.json();
 
