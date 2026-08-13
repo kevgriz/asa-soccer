@@ -159,7 +159,7 @@ const PLAYERS = [
   { name: "Elena Schultz", college: "Batten University", division: "D3", conference: "ODAC", note: "Freshman · Goalkeeper" },
   { name: "Maya Reid", college: "Marymount University", division: "D3", conference: "AEC", note: "Freshman · Forward" },
   { name: "Sadie Smith", college: "College of Wooster", division: "D3", conference: "NCAC", note: "Freshman · Defender" },
-  { name: "Mya Oboite", college: "Tampa", division: "D2", conference: "SSC", note: "Freshman · Defender" },
+  { name: "Mya Oboite", college: "Virginia State", division: "D2", conference: "CIAA", note: "Freshman - Defender" },
   { name: "Isabella Coffin", college: "Randolph College", division: "D3", conference: "ODAC", note: "Freshman · Defender" },
   { name: "Daeycine Robinson", college: "Tuskegee", division: "D2", conference: "SIAC", note: "Freshman · Defender/Forward" },
   { name: "MacKenzie Allen", college: "Tuskegee", division: "D2", conference: "SIAC", note: "Freshman · Goalkeeper" },
@@ -1282,11 +1282,40 @@ const SCHEDULES = {
       { date: "Nov 15", day: "Sun", opponent: "Metro Championship",     type: "Metro Tournament", time: "TBD",      home: false },
     ]
   },
+
+  "Virginia State": {
+    fullName: "Virginia State Trojans", location: "Ettrick, VA", stadium: "Rogers Stadium",
+    sourceUrl: "https://govsutrojans.com/sports/womens-soccer/schedule/2026", status: "confirmed",
+    record2025: "2025: 7-10-1 - 2025 USCAA National Champions - NCAA D2, CIAA",
+    notes: "Home games at Rogers Stadium, Ettrick VA. All home games on USCAA Sports Network. Mya Oboite '26 on roster. USCAA Championships Nov 13-15 in Pittsburgh PA.",
+    games: [
+      { date: "Aug 21", day: "Fri", opponent: "Grove Academy (Scrimmage)",  type: "Exhibition",     time: "6:00 PM ET",  home: true  },
+      { date: "Aug 29", day: "Sat", opponent: "Ferrum College",             type: "Non-Conference", time: "1:00 PM ET",  home: true  },
+      { date: "Sep 2",  day: "Wed", opponent: "University of Mount Olive",  type: "Non-Conference", time: "2:00 PM ET",  home: true  },
+      { date: "Sep 9",  day: "Wed", opponent: "at Emory & Henry",           type: "Non-Conference", time: "4:00 PM ET",  home: false },
+      { date: "Sep 12", day: "Sat", opponent: "Bluefield State",            type: "Non-Conference", time: "12:00 PM ET", home: true  },
+      { date: "Sep 16", day: "Wed", opponent: "Emory & Henry",              type: "Non-Conference", time: "3:00 PM ET",  home: true  },
+      { date: "Sep 19", day: "Sat", opponent: "at University of Mount Olive", type: "Non-Conference", time: "3:00 PM ET", home: false },
+      { date: "Sep 26", day: "Sat", opponent: "at Ferrum College",          type: "Non-Conference", time: "6:30 PM ET",  home: false },
+      { date: "Sep 30", day: "Wed", opponent: "at Lincoln University (Pa.)", type: "Non-Conference", time: "2:00 PM ET",  home: false },
+      { date: "Oct 4",  day: "Sun", opponent: "at Bluefield State",         type: "Non-Conference", time: "1:00 PM ET",  home: false },
+      { date: "Oct 7",  day: "Wed", opponent: "Regent University",          type: "Non-Conference", time: "4:00 PM ET",  home: true  },
+      { date: "Oct 10", day: "Sat", opponent: "at Chowan University",       type: "Non-Conference", time: "12:00 PM ET", home: false },
+      { date: "Oct 14", day: "Wed", opponent: "Hampton",                    type: "Non-Conference", time: "7:00 PM ET",  home: true  },
+      { date: "Oct 17", day: "Sat", opponent: "Shaw University",            type: "Non-Conference", time: "12:00 PM ET", home: true  },
+      { date: "Oct 24", day: "Sat", opponent: "at Salem University",        type: "Non-Conference", time: "11:00 AM ET", home: false },
+      { date: "Oct 28", day: "Wed", opponent: "Carolina University",        type: "Non-Conference", time: "4:00 PM ET",  home: true  },
+      { date: "Oct 31", day: "Sat", opponent: "Edward Waters University",   type: "Non-Conference", time: "1:00 PM ET",  home: true  },
+      { date: "Nov 13", day: "Fri", opponent: "USCAA Championships",        type: "USCAA Tournament", time: "TBA",        home: false, neutral: "Pittsburgh, PA" },
+      { date: "Nov 15", day: "Sun", opponent: "USCAA Championship Final",   type: "USCAA Tournament", time: "TBA",        home: false, neutral: "Pittsburgh, PA" },
+    ]
+  },
+
   "Tampa": {
     fullName: "Tampa Spartans", location: "Tampa, FL", stadium: "Pepin Stadium",
     sourceUrl: "https://www.tampaspartans.com/sports/wsoc/2026-27/schedule", status: "confirmed",
     record2025: "2025: Season record TBA · NCAA D2, Sunshine State Conference (SSC)",
-    notes: "Home games at Pepin Stadium, Tampa FL. SSC games on sunshinestateconference.tv/tampa. Mya Oboite '26 on roster.",
+    notes: "Home games at Pepin Stadium, Tampa FL. SSC games on sunshinestateconference.tv/tampa.",
     games: [
       { date: "Aug 27", day: "Thu", opponent: "at Lenoir-Rhyne",       type: "Regional",           time: "6:00 PM ET", home: false },
       { date: "Aug 30", day: "Sun", opponent: "at Catawba",            type: "Regional",           time: "TBA",        home: false },
