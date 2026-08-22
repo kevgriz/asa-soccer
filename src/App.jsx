@@ -12,8 +12,8 @@ import React, { useState, useRef, useEffect } from "react";
 
 const WATCH = {
   "USC": {
-    conference: { label: "BTN or B1G+", url: "https://www.bigtennetwork.com", note: "All home games on BTN or B1G+. Specific game network assignments announced by Big Ten later this summer. B1G+ is $9.95/mo." },
-    nonConf:   { label: "BTN or B1G+", url: "https://b1gplus.com", note: "Non-conference home games on BTN or B1G+. Road non-conf games on B1G+ or opponent's stream." },
+    conference: { label: "BTN / B1G+ / ESPN+", url: "https://www.espnplus.com", note: "Big Ten games on BTN or B1G+. Some non-conference games on ESPN+. Check each game for network assignment." },
+    nonConf:   { label: "BTN / B1G+ / ESPN+", url: "https://www.espnplus.com", note: "Non-conference games on BTN, B1G+, or ESPN+. Check usctrojans.com for each game's network." },
     liveStats: "https://usctrojans.com/sports/womens-soccer",
     roster: "https://usctrojans.com/sports/womens-soccer/roster",
     app: "B1G+ app / ESPN app",
