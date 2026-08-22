@@ -3634,8 +3634,8 @@ export default function App() {
                 const isAway = g.game.opponent.startsWith("at ");
                 const isArlington = g.game.arlington;
                 const oppDisplay = g.game.opponent.replace(/ ⚡$/, "").replace(/^at /, "");
-                const watchLabel = g.wInfo?.conference?.label;
-                const watchUrl   = g.wInfo?.conference?.url;
+                const watchLabel = g.game.opponent?.includes("BYU") ? "ESPN+" : g.wInfo?.conference?.label;
+                const watchUrl   = g.game.opponent?.includes("BYU") ? "https://www.espnplus.com" : g.wInfo?.conference?.url;
                 const watchFree  = isFree(watchLabel);
 
                 return (
