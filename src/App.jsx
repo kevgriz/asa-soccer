@@ -822,7 +822,7 @@ const SCHEDULES = {
       { date: "Aug 5",  day: "Wed", opponent: "at San Diego State (Exh.)", type: "Exhibition", time: "10:00 PM ET", home: false, watch: "B1G+", watchUrl: "https://b1gplus.com" },
       { date: "Aug 12", day: "Wed", opponent: "Duke", type: "Non-Conference", time: "TBA", home: true, watch: "BTN or B1G+", watchUrl: "https://b1gplus.com" },
       { date: "Aug 16", day: "Sun", opponent: "at Pepperdine", type: "Non-Conference", time: "TBA", home: false, watch: "B1G+", watchUrl: "https://b1gplus.com" },
-      { date: "Aug 22", day: "Sat", opponent: "at BYU", type: "Non-Conference", time: "TBA", home: false, watch: "B1G+", watchUrl: "https://b1gplus.com" },
+      { date: "Aug 22", day: "Sat", opponent: "at BYU", type: "Non-Conference", time: "TBA", home: false, watch: "ESPN+", watchUrl: "https://www.espnplus.com" },
       { date: "Aug 27", day: "Thu", opponent: "New Mexico State", type: "Non-Conference", time: "TBA", home: true, watch: "BTN or B1G+", watchUrl: "https://b1gplus.com" },
       { date: "Aug 30", day: "Sun", opponent: "Saint Mary's", type: "Non-Conference", time: "TBA", home: true, watch: "BTN or B1G+", watchUrl: "https://b1gplus.com" },
       { date: "Sep 3",  day: "Thu", opponent: "at Stanford", type: "Non-Conference", time: "TBA", home: false, watch: "B1G+", watchUrl: "https://b1gplus.com" },
